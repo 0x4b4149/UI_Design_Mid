@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ city.name }} 7-Day{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>{{ city.name }} <span class="muted">{{ city.region }}</span></h1>
+    <p class="muted">7 天預報 · 週末標示 · 降雨柱狀圖 · 最佳時段</p>
+  </div>
+  {% if user.is_authenticated %}
+    <form method="post" action="{% url 'favorite' city.id %}">{% csrf_token %}
+      <button class="button ghost" type="submit">{% if is_fav %}★ 已收藏（點擊移除）{% else %}☆ 加入收藏{% endif %}</button>
+    </form>
+  {% else %}
+    <a class="button ghost" href="{% url 'login' %}">登入後可收藏此城市</a>
+  {% endif %}
+</div>
+
+{% if best %}
+<div class="best">
+  🎯 建議出發時段：<strong>{{ best.date|date:"m/d (D)" }} {{ best.best_time_hint }}</strong>
+  <span class="muted small">（依{{ best.date|date:"D" }}降雨機率 {{ best.precip_pct }}% 評估）</span>
+</div>
+{% endif %}
+
+<div class="weekgrid">
+  {% for d in week %}
+  <div class="daycard{% if d.is_weekend %} weekend{% endif %}">
+    <div class="day">{{ d.date|date:"m/d D" }}{% if d.is_weekend %} <span class="badge">週末</span>{% endif %}</div>
+    <div class="cond">{{ d.condition_icon }} {{ d.get_condition_display }}</div>
+    <div class="temps">{{ d.temp_high_c }}° <span class="low">／ {{ d.temp_low_c }}°</span></div>
+    <div class="bar" title="降雨機率 {{ d.precip_pct }}%"><div class="fill" style="width: {{ d.precip_pct }}%"></div></div>
+    <div class="muted small">降雨 {{ d.precip_pct }}%<br>風 {{ d.wind_kmh }} km/h</div>
+  </div>
+  {% empty %}
+  <section class="card empty">此城市尚無預報資料（Admin 後台可新增，或執行 python manage.py seed_demo）</section>
+  {% endfor %}
+</div>
+
+{% if city.alerts %}
+<div class="card alertlistcard">
+  <h2>{{ city.name }} 相關警報</h2>
+  {% for a in city.alerts.all %}
+  <a class="alertline sev-{{ a.severity }}" href="{% url 'alerts' %}?q={{ a.area|urlencode }}">
+    <span class="pill sev-{{ a.severity }}">{{ a.get_severity_display }}</span> {{ a.title }}
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<p class="muted small">資料由本站資料庫（Neon PostgreSQL／SQLite 示範）提供 · <a href="{% url 'alerts' %}">查看全部警報</a></p>
+{% endblock %}

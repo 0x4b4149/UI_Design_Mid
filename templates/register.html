@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}註冊{% endblock %}
+{% block content %}
+<section class="card authcard">
+  <h2>註冊會員</h2>
+  <form method="post" class="authform">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <label class="fieldlabel">使用者名稱 {{ form.username.errors }}</label>
+    {{ form.username }}
+    <label class="fieldlabel">密碼 {{ form.password1.errors }}</label>
+    {{ form.password1 }}
+    <label class="fieldlabel">確認密碼 {{ form.password2.errors }}</label>
+    {{ form.password2 }}
+    <button class="button" type="submit">建立帳號</button>
+  </form>
+  <p class="muted small">密碼規則：至少 8 碼，且不可太常見或全為數字。</p>
+  <p class="muted small">已有帳號？<a href="{% url 'login' %}">登入</a></p>
+</section>
+{% endblock %}

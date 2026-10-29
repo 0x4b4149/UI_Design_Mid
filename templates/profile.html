@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}My Account{% endblock %}
+{% block content %}
+<h1>會員中心</h1>
+<div class="grid2">
+  <section class="card">
+    <h2>通知偏好</h2>
+    <form method="post">
+      {% csrf_token %}
+      <label class="fieldlabel">通知渠道</label>
+      {{ form.notify_channel }}
+      <label class="fieldlabel">警報通知門檻（此嚴重度以上才通知）</label>
+      {{ form.min_severity }}
+      <button class="button" type="submit">儲存偏好</button>
+    </form>
+    <p class="muted small">此頁面僅於登入後可看到（登入前後差異）。</p>
+  </section>
+
+  <section class="card">
+    <h2>我的收藏城市（{{ favorites|length }}）</h2>
+    {% if favorites %}
+      <ul class="plist">
+        {% for f in favorites %}
+        <li>
+          <a href="{% url 'forecast' f.city.slug %}">{{ f.city.name }}</a>
+          <span class="muted">{{ f.city.region }}</span>
+          <form method="post" action="{% url 'favorite' f.city.id %}">{% csrf_token %}
+            <button class="mini" type="submit">移除</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">尚無收藏。用下方新增，或到城市頁加入。</p>
+    {% endif %}
+    <form method="post" action="{% url 'add_favorite' %}" class="addfav">
+      {% csrf_token %}
+      <label class="fieldlabel">新增收藏</label>
+      <div class="btnrow">
+        <select name="city">
+          {% for c in cities %}<option value="{{ c.id }}">{{ c.name }}（{{ c.region }}）</option>{% endfor %}
+        </select>
+        <button class="button ghost" type="submit">加入</button>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

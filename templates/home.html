@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Today{% endblock %}
+{% block content %}
+<section class="hero">
+  {% if city %}<h1>{{ city.name }} 今日天氣</h1>{% else %}<h1>ClearSky</h1>{% endif %}
+  <p class="sub">單一搜尋 · 資訊分層 · 狀態可見 · 行動導向</p>
+  <form class="searchbar" method="get" action="{% url 'home' %}">
+    <input type="search" name="q" value="{{ q }}" placeholder="輸入城市，例如 New York、Miami" aria-label="搜尋城市">
+    <button type="submit">搜尋</button>
+  </form>
+</section>
+
+{% if searched %}
+<section class="card">
+  <h2>搜尋結果（{{ results|length }}）</h2>
+  {% if results %}
+    <ul class="resultlist">
+      {% for c in results %}
+      <li><a href="{% url 'forecast' c.slug %}">{{ c.name }} <span class="muted">{{ c.region }}</span> →</a></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">查無符合「{{ q }}」的城市。請確認名稱，例如 New York、Miami。</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if today_f %}
+<section class="card current">
+  <div>
+    <div class="bigtemp">{{ today_f.temp_high_c }}° <span class="low">／ 最低 {{ today_f.temp_low_c }}°</span></div>
+    <div class="muted">
+      {{ today_f.condition_icon }} {{ today_f.get_condition_display }} ·
+      降雨 {{ today_f.precip_pct }}% ·
+      風速 {{ today_f.wind_kmh }} km/h ·
+      更新於 {{ today_f.date|date:"Y/m/d" }}
+    </div>
+  </div>
+  <div class="advice">
+    {% if today_f.precip_pct >= 50 %}☂️ 建議帶傘{% elif today_f.temp_low_c < 10 %}🧥 需要外套{% else %}👍 天氣舒適，安心出門{% endif %}
+  </div>
+</section>
+{% else %}
+<section class="card empty">此地區暫無今日資料（請由 Admin 後台補上，或執行 python manage.py seed_demo）</section>
+{% endif %}
+
+{% if alerts %}
+<section class="alertsban">
+  {% for a in alerts %}
+  <a class="alertline sev-{{ a.severity }}" href="{% url 'alerts' %}">
+    <span class="pill sev-{{ a.severity }}">{{ a.get_severity_display }}</span>
+    {{ a.title }} · {{ a.area }}
+  </a>
+  {% endfor %}
+</section>
+{% else %}
+<section class="card empty">目前無生效警報 ✔</section>
+{% endif %}
+
+{% if user.is_authenticated %}
+<section class="card">
+  <h2>我的收藏城市</h2>
+  {% if favorites %}
+    <div class="favchips">
+      {% for f in favorites %}
+      <span class="favchip">
+        <a href="{% url 'forecast' f.city.slug %}">{{ f.city.name }}</a>
+        <form method="post" action="{% url 'favorite' f.city.id %}">{% csrf_token %}
+          <button class="mini" type="submit" title="移除收藏">✕</button>
+        </form>
+      </span>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">尚未收藏城市。前往城市頁按「加入收藏」。</p>
+  {% endif %}
+  {% if member %}<p class="muted small">通知偏好：{{ member.get_notify_channel_display }}｜門檻：{{ member.get_min_severity_display }}（<a href="{% url 'profile' %}">修改</a>）</p>{% endif %}
+</section>
+{% else %}
+<section class="card loginpanel">
+  <h2>會員登入後可使用</h2>
+  <ul class="muted">
+    <li>個人化首頁（預設顯示第一個收藏城市）</li>
+    <li>收藏城市，快速切換</li>
+    <li>設定警報通知渠道與嚴重度門檻</li>
+  </ul>
+  <div class="btnrow">
+    <a class="button" href="{% url 'login' %}">登入</a>
+    <a class="button ghost" href="{% url 'register' %}">註冊</a>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

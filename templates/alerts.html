@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Alerts{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <div>
+    <h1>警報中心</h1>
+    <p class="muted">依嚴重度與地區篩選 · 清單顯示生效時間與建議行動</p>
+  </div>
+  <div class="countchips">
+    <span class="chip sev-severe">Severe {{ counts.severe }}</span>
+    <span class="chip sev-moderate">Moderate {{ counts.moderate }}</span>
+    <span class="chip sev-minor">Minor {{ counts.minor }}</span>
+  </div>
+</div>
+
+<form class="filters" method="get" action="{% url 'alerts' %}">
+  <select name="severity" aria-label="嚴重度篩選">
+    <option value="">全部嚴重度</option>
+    <option value="severe" {% if severity == 'severe' %}selected{% endif %}>Severe</option>
+    <option value="moderate" {% if severity == 'moderate' %}selected{% endif %}>Moderate</option>
+    <option value="minor" {% if severity == 'minor' %}selected{% endif %}>Minor</option>
+  </select>
+  <input type="search" name="q" value="{{ q }}" placeholder="篩選名稱或影響地區" aria-label="搜尋警報">
+  <button type="submit">套用篩選</button>
+</form>
+
+{% if items %}
+  <div class="alerts-list">
+  {% for a in items %}
+    <article class="card altcard">
+      <div class="althead">
+        <span class="pill sev-{{ a.severity }}">{{ a.get_severity_display }}</span>
+        <h3>{{ a.title }}</h3>
+      </div>
+      <p class="muted">影響地區：{{ a.area|default:"全國多區" }}<br>
+      生效：{{ a.starts_at|date:"m/d H:i" }} → {{ a.ends_at|date:"m/d H:i" }}（狀態：有效中）</p>
+      {% if a.advice %}
+      <div class="advicebox">
+        {% for line in a.advice.splitlines %}<div>• {{ line }}</div>{% endfor %}
+      </div>
+      {% endif %}
+      {% if a.city %}<a class="muted small" href="{% url 'forecast' a.city.slug %}">查看 {{ a.city.name }} 預報 →</a>{% endif %}
+    </article>
+  {% endfor %}
+  </div>
+{% else %}
+  <section class="card empty">
+    <h2>目前沒有符合條件的警報</h2>
+    <p class="muted">
+      {% if severity or q %}篩選條件：{% if severity %}嚴重度 {{ severity }} {% endif %}{% if q %}關鍵字「{{ q }}」{% endif %}，無結果。
+      <a href="{% url 'alerts' %}">清除篩選</a>
+      {% else %}目前無任何生效中的警報，你可以放心規劃活動。✔{% endif %}
+    </p>
+  </section>
+{% endif %}
+{% endblock %}

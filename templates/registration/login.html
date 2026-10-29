@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}登入{% endblock %}
+{% block content %}
+<section class="card authcard">
+  <h2>登入會員</h2>
+  {% if form.errors %}<p class="err">帳號或密碼不正確，請再試一次。</p>{% endif %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="text" name="username" placeholder="帳號" autocomplete="username" required>
+    <input type="password" name="password" placeholder="密碼" autocomplete="current-password" required>
+    <button class="button" type="submit">登入</button>
+  </form>
+  <p class="muted small">還沒有帳號？<a href="{% url 'register' %}">註冊</a></p>
+  <p class="muted small">（教學展示用測試帳號由 seed_demo 建立）</p>
+</section>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% load static %}
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}ClearSky{% endblock %}｜期中專題 Redesign 示範站</title>
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+<header class="topbar">
+  <nav class="nav container">
+    <a class="brand" href="{% url 'home' %}">🌤️ ClearSky</a>
+    <div class="tabs">
+      <a href="{% url 'home' %}">Today</a>
+      <a href="{% url 'alerts' %}">Alerts</a>
+      {% if user.is_authenticated %}<a href="{% url 'profile' %}">My Account</a>{% endif %}
+    </div>
+    <div class="side">
+      {% if user.is_authenticated %}
+        <span class="chip">{{ user.username }}</span>
+        {% if user.is_staff %}<a class="chip link" href="/admin/">Admin 後台</a>{% endif %}
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="chip btn-link" type="submit">登出</button></form>
+      {% else %}
+        <a class="chip link" href="{% url 'login' %}">登入</a>
+        <a class="chip link" href="{% url 'register' %}">註冊</a>
+      {% endif %}
+    </div>
+  </nav>
+</header>
+{% if messages %}
+<div class="container">
+  {% for m in messages %}<div class="flash {{ m.tags }}">{{ m }}</div>{% endfor %}
+</div>
+{% endif %}
+<main class="container">
+{% block content %}{% endblock %}
+</main>
+<footer class="container foot">期中專題示範站 · 資料為教學用示意資料，非即時官方氣象數據 · 第八組</footer>
+</body>
+</html>
