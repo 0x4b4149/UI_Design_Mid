@@ -242,12 +242,12 @@ python scripts/build_pptx.py
 ```json
 {
   "COURSE": "使用者介面設計",
-  "GROUP": "第 3 組",
-  "MEMBERS": "王小明（學號）、陳小美（學號）",
+  "GROUP": "第 8 組",
+  "MEMBERS": "組員：________（學號：________）",
   "DATE": "2026.11.01",
-  "FRONTEND_URL": "https://skyline-weather.onrender.com/",
-  "ADMIN_URL": "https://skyline-weather.onrender.com/admin/",
-  "REPO_URL": "https://github.com/your-account/skyline-weather"
+  "FRONTEND_URL": "https://skyline-weather-gqoc.onrender.com/",
+  "ADMIN_URL": "https://skyline-weather-gqoc.onrender.com/admin/",
+  "REPO_URL": "https://github.com/0x4b4149/UI_Design_Mid"
 }
 ```
 
@@ -255,11 +255,14 @@ python scripts/build_pptx.py
 
 ### 繳交前必填（重要）
 
-- [ ] `docs/report/report_meta.json`：組別、組員姓名／學號、`FRONTEND_URL`、`ADMIN_URL`、`REPO_URL`。
-- [ ] 實際完成 Neon + Render 部署，將連結填入 Meta 並重新產生 PDF。
+- [x] 實際完成 Neon + Render 部署，連結已填入 Meta 並重新產生 PDF。
+- [x] `docs/report/report_meta.json`：組別、`FRONTEND_URL`、`ADMIN_URL`、`REPO_URL`。
+- [x] 確認 `demo / Demo1234!` 與 `admin / Admin1234!` 可登入（已於正式站驗證）。
+- [ ] `docs/report/report_meta.json`：補上組員姓名／學號，再執行 `更新報告.bat`。
 - [ ] 在報告附錄放入 **10 組 AI 對話截圖**（含 Prompt 與 AI 回覆）；前期 8 組可從 2026-10-18 的 OpenCode 對話截圖，本期 2 組為 2026-10-31 對話。
-- [ ] 確認 `demo / Demo1234!` 與 `admin / Admin1234!` 可登入，或改成自己的測試帳密。
 - [ ] PDF 上傳 TronClass 作業區（2026/11/01 23:59 前）。
+
+> 目前正式站：<https://skyline-weather-gqoc.onrender.com/>；Neon 專案已 claim 到 `0x4b4149` 帳號。若日後在 Neon 重設密碼，記得同步更新 Render 的 `DATABASE_URL` 環境變數並重新部署。
 
 ---
 

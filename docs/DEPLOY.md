@@ -2,6 +2,20 @@
 
 目標：在 **Neon PostgreSQL** 建立資料庫，把 **Django 前台 + 管理後台** 部署到 **Render**，並取得可驗收的連結。
 
+## 目前部署狀態（2026-11-01）
+
+| 項目 | 內容 |
+| --- | --- |
+| 前台 | <https://skyline-weather-gqoc.onrender.com/> |
+| 後台 | <https://skyline-weather-gqoc.onrender.com/admin/> |
+| 健康檢查 | <https://skyline-weather-gqoc.onrender.com/healthz/> → `{"status": "ok", "database": "up"}` |
+| GitHub | <https://github.com/0x4b4149/UI_Design_Mid> |
+| Render Blueprint | `skyline-weather-group8`（服務 `skyline-weather`） |
+| Neon 專案 | `claimable-29d8654a5ed1`（已 claim 到 `0x4b4149`，region `aws-us-east-2`） |
+| 測試帳號 | 會員 `demo / Demo1234!`；管理員 `admin / Admin1234!` |
+
+> Neon 的 temporary project 被 claim 後，角色密碼會輪替一次，Render 的 `DATABASE_URL` 必須同步更新，否則 `/healthz/` 會回 503。本次已更新並重新部署驗證。
+
 ---
 
 ## 0. 你需要準備的帳號
