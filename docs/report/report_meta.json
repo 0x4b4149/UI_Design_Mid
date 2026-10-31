@@ -1,9 +1,9 @@
 {
   "COURSE": "使用者介面設計",
-  "GROUP": "第 ___ 組",
+  "GROUP": "第 8 組",
   "MEMBERS": "組員：________（學號：________）",
   "DATE": "2026.11.01",
-  "FRONTEND_URL": "（部署後填入前台網址）",
-  "ADMIN_URL": "（部署後填入後台網址）",
-  "REPO_URL": "（部署後填入 GitHub 網址）"
+  "FRONTEND_URL": "https://skyline-weather-gqoc.onrender.com/",
+  "ADMIN_URL": "https://skyline-weather-gqoc.onrender.com/admin/",
+  "REPO_URL": "https://github.com/0x4b4149/UI_Design_Mid"
 }

@@ -4,6 +4,17 @@
 
 以 Django 建立可操作的前台網站、Django 管理後台與會員系統，資料庫使用 Neon PostgreSQL，部署平台為 Render。網站延續先前 Bad UI 作業對 weather.gov 的 8 項問題分析與 9 張 Redesign 分鏡，將調查結果實作成 5 個主要頁面。
 
+## Live Demo（第 8 組）
+
+- 前台：<https://skyline-weather-gqoc.onrender.com/>
+- 後台：<https://skyline-weather-gqoc.onrender.com/admin/>
+- 健康檢查：<https://skyline-weather-gqoc.onrender.com/healthz/>
+- 程式碼：<https://github.com/0x4b4149/UI_Design_Mid>
+- 會員：`demo / Demo1234!`
+- 管理員：`admin / Admin1234!`
+
+> Render 免費方案閒置會休眠，第一次開啟可能需要 30–60 秒。
+
 ![首頁](docs/screenshots/01-home.png)
 
 ---
