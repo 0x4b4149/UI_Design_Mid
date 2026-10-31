@@ -22,3 +22,4 @@ Thumbs.db
 # Generated report previews / raw session export
 docs/report/preview/
 docs/report/session_export.json
+.neon
