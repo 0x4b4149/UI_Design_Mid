@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }}｜Skyline Weather 管理後台{% endblock %}
+
+{% block extrastyle %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'admin/css/skyline_admin.css' %}">
+{% endblock %}
+
+{% block branding %}
+  <div id="site-name">
+    <a href="{% url 'admin:index' %}">
+      <span class="admin-mark" aria-hidden="true">☀</span>
+      Skyline Weather <span class="admin-sub">網站管理後台</span>
+    </a>
+  </div>
+{% endblock %}
+
+{% block nav-global %}
+  <div class="admin-front-link">
+    <a href="{% url 'home' %}" target="_blank" rel="noopener">開啟前台網站 ↗</a>
+  </div>
+{% endblock %}

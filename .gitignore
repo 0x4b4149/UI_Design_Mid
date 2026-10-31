@@ -1,0 +1,24 @@
+# Python / Django
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+staticfiles/
+media/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Tooling / OS
+.DS_Store
+Thumbs.db
+*.log
+.selenium/
+
+# Generated report previews / raw session export
+docs/report/preview/
+docs/report/session_export.json

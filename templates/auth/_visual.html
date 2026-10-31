@@ -1,0 +1,28 @@
+{% load weather_extras %}
+<div class="auth-visual">
+  <a class="brand" href="{% url 'home' %}">
+    <svg class="brand-mark" width="42" height="42" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+      <rect width="48" height="48" rx="14" fill="#1567D3"/>
+      <circle cx="30" cy="18" r="7" fill="#F6B73C"/>
+      <path d="M12 35h22a5.5 5.5 0 0 0 .7-10.9A9 9 0 0 0 17.3 25 5 5 0 0 0 12 35Z" fill="#EAF3FD" stroke="#9DC3EA" stroke-width="1.6"/>
+    </svg>
+    <span class="brand-text"><strong>Skyline</strong><small>Weather · NWS Redesign</small></span>
+  </a>
+
+  <h2>把天氣講清楚，<br>也把選擇權還給你。</h2>
+  <p>從 weather.gov 的 Bad UI 調查出發，重新整理資訊層級、搜尋流程與警報呈現。登入後，首頁會記得你的城市與單位。</p>
+
+  <div class="auth-points">
+    <div class="auth-point">{% ui_icon "check" 16 %}<span>收藏常用城市，首頁自動顯示</span></div>
+    <div class="auth-point">{% ui_icon "check" 16 %}<span>記住 °F / °C 偏好與查詢紀錄</span></div>
+    <div class="auth-point">{% ui_icon "check" 16 %}<span>依嚴重程度設定警報通知門檻</span></div>
+  </div>
+
+  <div class="auth-weather">
+    {% weather_icon "partly_cloudy" 76 %}
+    <div>
+      <strong>58°</strong>
+      <small>New York, NY · 多雲時晴 · 體感 56°</small>
+    </div>
+  </div>
+</div>

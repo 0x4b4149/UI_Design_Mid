@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load weather_extras %}
+{% block title %}警報中心｜Skyline Weather{% endblock %}
+{% block meta_description %}用嚴重程度、警報類型與區域篩選生效中的天氣警報，並查看建議行動。{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="page-head">
+    <div>
+      <span class="eyebrow">{% ui_icon "bell" 14 %} 警報中心 · Alerts</span>
+      <h1>先看警報，再決定行程</h1>
+      <p>原本的 Active Alerts 只把資訊堆在同一頁；這裡依照嚴重程度排序，補上影響區域、有效時間與建議行動，並支援多條件篩選。</p>
+    </div>
+    <div class="page-head-side">
+      <a class="btn btn-ghost btn-sm" href="{% url 'dashboard' %}">{% ui_icon "settings" 15 %} 通知偏好</a>
+    </div>
+  </div>
+
+  <div class="alert-stats mb-3">
+    <div class="alert-stat sev"><div><div class="n">{{ severity_counts.severe|default:0 }}</div><div class="l">嚴重 Severe</div></div></div>
+    <div class="alert-stat mod"><div><div class="n">{{ severity_counts.moderate|default:0 }}</div><div class="l">中等 Moderate</div></div></div>
+    <div class="alert-stat min"><div><div class="n">{{ severity_counts.minor|default:0 }}</div><div class="l">輕微 Minor</div></div></div>
+    <div class="alert-stat"><div><div class="n">{{ total }}</div><div class="l">符合目前篩選</div></div></div>
+  </div>
+
+  <section class="card filter-card">
+    <form class="filter-form" method="get" action="{% url 'alerts' %}">
+      <div class="filter-grid">
+        <div class="field">
+          <label for="alert-q">搜尋警報</label>
+          <input id="alert-q" class="field-input" type="search" name="q" value="{{ q }}" placeholder="標題、區域或城市">
+        </div>
+        <div class="field">
+          <label for="alert-severity">嚴重程度</label>
+          <select id="alert-severity" name="severity">
+            <option value="">全部等級</option>
+            <option value="severe" {% if selected_severity == "severe" %}selected{% endif %}>嚴重 Severe</option>
+            <option value="moderate" {% if selected_severity == "moderate" %}selected{% endif %}>中等 Moderate</option>
+            <option value="minor" {% if selected_severity == "minor" %}selected{% endif %}>輕微 Minor</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="alert-type">警報類型</label>
+          <select id="alert-type" name="type">
+            <option value="">全部類型</option>
+            {% for value, label in types %}
+              <option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="alert-region">區域</label>
+          <select id="alert-region" name="region">
+            <option value="">全部區域</option>
+            {% for value, label in regions %}
+              <option value="{{ value }}" {% if selected_region == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="filter-actions">
+        <button class="btn btn-primary" type="submit">{% ui_icon "filter" 15 %} 套用篩選</button>
+        <a class="btn btn-ghost" href="{% url 'alerts' %}">{% ui_icon "refresh" 15 %} 重設</a>
+        {% if selected_severity or selected_type or selected_region or q %}
+          <span class="small muted">目前顯示 {{ total }} 則</span>
+        {% endif %}
+      </div>
+    </form>
+  </section>
+
+  <div class="alert-layout">
+    <div>
+      {% if page_obj.object_list %}
+        <div class="alert-list-lg">
+          {% for alert in page_obj %}
+            <a class="alert-row {{ alert.severity|severity_class }}" href="{{ alert.get_absolute_url }}">
+              <span class="alert-row-ic">{% ui_icon alert.alert_type|alert_icon 20 %}</span>
+              <div class="alert-row-body">
+                <div class="alert-row-title">
+                  {{ alert.title }}
+                  <span class="pill {% if alert.severity == 'severe' %}pill-red{% elif alert.severity == 'moderate' %}pill-amber{% else %}pill-blue{% endif %}">
+                    {{ alert.severity|severity_zh }}
+                  </span>
+                </div>
+                <div class="alert-row-meta">
+                  {% ui_icon "pin" 12 %} {{ alert.location.full_name }} · {{ alert.areas }} · {{ alert.duration_label }}
+                </div>
+                <div class="alert-row-desc">{{ alert.description }}</div>
+              </div>
+              <div class="alert-row-side">
+                <span class="alert-type-chip">{% ui_icon alert.alert_type|alert_icon 13 %} {{ alert.get_alert_type_display }}</span>
+                {% ui_icon "chevron-right" 18 %}
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+
+        {% if page_obj.paginator.num_pages > 1 %}
+          <nav class="pagination" aria-label="警報分頁">
+            {% if page_obj.has_previous %}<a href="{% querystring page=page_obj.previous_page_number %}">{% ui_icon "arrow-left" 14 %}</a>{% endif %}
+            {% for num in page_obj.paginator.page_range %}
+              {% if num == page_obj.number %}<span class="is-current">{{ num }}</span>
+              {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}<a href="{% querystring page=num %}">{{ num }}</a>{% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}<a href="{% querystring page=page_obj.next_page_number %}">{% ui_icon "arrow-right" 14 %}</a>{% endif %}
+          </nav>
+        {% endif %}
+      {% else %}
+        <div class="card empty-card">
+          <span class="muted">{% ui_icon "shield" 38 %}</span>
+          <h3>目前沒有符合條件的警報</h3>
+          <p>試試看把嚴重程度或區域篩選清除，或回到所有生效中的警報。</p>
+          <a class="btn btn-primary btn-sm mt-2" href="{% url 'alerts' %}">查看全部警報</a>
+        </div>
+      {% endif %}
+    </div>
+
+    <aside class="stack-md">
+      <section class="card">
+        <div class="card-head"><h2>{% ui_icon "layers" 16 %} 警報等級怎麼看</h2></div>
+        <div class="insight">
+          <span class="insight-ic tone-warn">{% ui_icon "alert" 17 %}</span>
+          <div><strong>Severe · 嚴重</strong><p>可能造成生命或財產威脅，需要立即採取行動。</p></div>
+        </div>
+        <div class="insight">
+          <span class="insight-ic" style="background:var(--warn-bg);color:#9A6A05;">{% ui_icon "alert" 17 %}</span>
+          <div><strong>Moderate · 中等</strong><p>可能影響日常活動，建議調整行程並持續留意更新。</p></div>
+        </div>
+        <div class="insight" style="border-bottom:0;">
+          <span class="insight-ic tone-info">{% ui_icon "info" 17 %}</span>
+          <div><strong>Minor · 輕微</strong><p>影響較小，但仍可能造成局部不便。</p></div>
+        </div>
+      </section>
+
+      <section class="card" style="background:linear-gradient(140deg,#F0F7FF,#FAFDFF);border-color:#C7DDF8;">
+        <div class="card-head"><h2>{% ui_icon "bell" 16 %} 不想漏掉警報？</h2></div>
+        <p class="small" style="color:var(--ink-2);line-height:1.8;">登入後可設定通知管道與嚴重程度門檻，只接收你真正需要的事件。</p>
+        <div class="mt-2 stack-sm">
+          {% if user.is_authenticated %}
+            <a class="btn btn-primary btn-sm btn-block" href="{% url 'dashboard' %}#preferences">{% ui_icon "settings" 15 %} 設定通知偏好</a>
+          {% else %}
+            <a class="btn btn-primary btn-sm btn-block" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">{% ui_icon "user" 15 %} 登入後訂閱</a>
+            <a class="btn btn-ghost btn-sm btn-block" href="{% url 'register' %}">建立帳號</a>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="card card-flat">
+        <div class="card-head"><h2>{% ui_icon "database" 16 %} 資料來源</h2></div>
+        <p class="small muted" style="line-height:1.8;">警報內容依 NWS CAP 結構整理，包含嚴重程度、緊急程度、影響區域與建議行動。本專題資料為模擬內容。</p>
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

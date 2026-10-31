@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load weather_extras %}
+{% block title %}城市總覽｜Skyline Weather{% endblock %}
+{% block meta_description %}用關鍵字、區域、天氣狀況、溫度區間與警報狀態，一次篩選出你要看的城市。{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="page-head">
+    <div>
+      <span class="eyebrow">{% ui_icon "map" 14 %} 城市總覽 · Search &amp; Filter</span>
+      <h1>找到你關心的城市</h1>
+      <p>原本 weather.gov 需要在多個頁面與表單之間來回切換；這裡把關鍵字、區域、天氣、溫度與警報狀態集中在同一組篩選器。</p>
+    </div>
+    <div class="page-head-side">
+      <span class="pill pill-blue">{% ui_icon "database" 13 %} {{ total }} 個城市</span>
+      <a class="btn btn-ghost btn-sm" href="{% url 'alerts' %}">{% ui_icon "bell" 15 %} 查看警報</a>
+    </div>
+  </div>
+
+  <section class="card filter-card">
+    <form class="filter-form" method="get" action="{% url 'locations' %}">
+      <div class="filter-grid">
+        <div class="field">
+          <label for="filter-q">搜尋城市、州、郡或 ZIP</label>
+          <input id="filter-q" class="field-input" type="search" name="q" value="{{ q }}" placeholder="例如 New York、NY、10001">
+        </div>
+        <div class="field">
+          <label for="filter-region">區域</label>
+          <select id="filter-region" name="region">
+            <option value="">全部區域</option>
+            {% for value, label in regions %}
+              <option value="{{ value }}" {% if selected_region == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="filter-condition">天氣狀況</label>
+          <select id="filter-condition" name="condition">
+            <option value="">全部天氣</option>
+            {% for value, label in conditions %}
+              <option value="{{ value }}" {% if selected_condition == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <span class="field-label">警報狀態</span>
+          <label class="check-field">
+            <input type="checkbox" name="alerts" value="1" {% if alert_filter == "1" %}checked{% endif %}>
+            僅顯示有生效警報的城市
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-grid-4">
+        <div class="field" style="grid-column: span 2;">
+          <span class="field-label">現在溫度區間（°F）</span>
+          <div class="range-row">
+            <input class="field-input" type="number" name="temp_min" value="{{ temp_min }}" placeholder="最低，例如 40" min="-40" max="130" aria-label="最低溫度">
+            <span>–</span>
+            <input class="field-input" type="number" name="temp_max" value="{{ temp_max }}" placeholder="最高，例如 75" min="-40" max="130" aria-label="最高溫度">
+          </div>
+        </div>
+        <div class="field">
+          <span class="field-label">排序</span>
+          <select name="sort" data-auto-submit>
+            <option value="name" {% if sort == "name" %}selected{% endif %}>州別 / 城市名稱</option>
+            <option value="temp_desc" {% if sort == "temp_desc" %}selected{% endif %}>現在溫度：高到低</option>
+            <option value="temp_asc" {% if sort == "temp_asc" %}selected{% endif %}>現在溫度：低到高</option>
+            <option value="alerts" {% if sort == "alerts" %}selected{% endif %}>警報數量最多</option>
+            <option value="name_desc" {% if sort == "name_desc" %}selected{% endif %}>州別 / 城市名稱（反序）</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-primary" type="submit">{% ui_icon "filter" 15 %} 套用篩選</button>
+          {% if has_filters %}<a class="btn btn-ghost" href="{% url 'locations' %}">{% ui_icon "refresh" 15 %} 重設</a>{% endif %}
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <div class="result-toolbar">
+    <div class="count">共 <strong>{{ total }}</strong> 個符合條件的城市{% if page_obj.paginator.num_pages > 1 %} · 第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 頁{% endif %}</div>
+    <div class="active-filters">
+      {% if q %}<span class="pill">{% ui_icon "search" 12 %} {{ q }}</span>{% endif %}
+      {% if selected_region %}{% for value, label in regions %}{% if selected_region == value %}<span class="pill">{{ label }}</span>{% endif %}{% endfor %}{% endif %}
+      {% if selected_condition %}{% for value, label in conditions %}{% if selected_condition == value %}<span class="pill">{{ label }}</span>{% endif %}{% endfor %}{% endif %}
+      {% if alert_filter %}<span class="pill">{% ui_icon "bell" 12 %} 有警報</span>{% endif %}
+      {% if temp_min or temp_max %}<span class="pill">{{ temp_min|default:"—" }}–{{ temp_max|default:"—" }}°F</span>{% endif %}
+    </div>
+  </div>
+
+  {% if page_obj.object_list %}
+    <div class="location-grid">
+      {% for city in page_obj %}
+        <article class="loc-card">
+          <div class="loc-top">
+            <div>
+              <div class="loc-name"><a href="{{ city.get_absolute_url }}">{{ city.name }}</a> <span>, {{ city.state }}</span></div>
+              <div class="loc-sub">{{ city.county }}{% if city.station_code %} · {{ city.station_code }}{% endif %}</div>
+            </div>
+            <div class="loc-fav">
+              {% include "partials/favorite_button.html" with location=city %}
+            </div>
+          </div>
+
+          <a class="loc-main" href="{{ city.get_absolute_url }}">
+            {% if city.current %}
+              {% weather_icon city.current.condition 46 %}
+              <div>
+                <div class="loc-temp">{{ city.current.temp_f|temp:unit }}<span style="font-size:14px;color:var(--ink-3);">{% if unit == "c" %}C{% else %}F{% endif %}</span></div>
+                <div class="loc-cond">{{ city.current.get_condition_display }} · 體感 {{ city.current.feels_like_f|temp:unit }}</div>
+              </div>
+            {% else %}
+              <span class="muted">尚無觀測資料</span>
+            {% endif %}
+          </a>
+
+          <div class="loc-bottom">
+            {% if city.current %}
+              <span>今日 <span class="hi">{{ city.current.high_f|temp:unit }}</span> / <span class="lo">{{ city.current.low_f|temp:unit }}</span></span>
+              <span class="rain">{% ui_icon "umbrella" 12 %} {{ city.current.humidity }}% 濕度</span>
+            {% endif %}
+            {% if city.active_alert_count %}
+              <span class="pill pill-red loc-alert">{% ui_icon "alert" 12 %} {{ city.active_alert_count }} 則警報</span>
+            {% else %}
+              <span class="pill pill-green loc-alert">{% ui_icon "check" 12 %} 無警報</span>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+      <nav class="pagination" aria-label="分頁">
+        {% if page_obj.has_previous %}
+          <a href="{% querystring page=page_obj.previous_page_number %}" aria-label="上一頁">{% ui_icon "arrow-left" 14 %}</a>
+        {% else %}
+          <span class="is-disabled">{% ui_icon "arrow-left" 14 %}</span>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+          {% if num == page_obj.number %}
+            <span class="is-current">{{ num }}</span>
+          {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+            <a href="{% querystring page=num %}">{{ num }}</a>
+          {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+          <a href="{% querystring page=page_obj.next_page_number %}" aria-label="下一頁">{% ui_icon "arrow-right" 14 %}</a>
+        {% else %}
+          <span class="is-disabled">{% ui_icon "arrow-right" 14 %}</span>
+        {% endif %}
+      </nav>
+    {% endif %}
+  {% else %}
+    <div class="card empty-card">
+      <span class="muted">{% ui_icon "search" 38 %}</span>
+      <h3>沒有找到符合條件的城市</h3>
+      <p>試試看移除溫度區間、改用州別代碼（例如 NY），或清除所有篩選。</p>
+      <a class="btn btn-primary btn-sm mt-2" href="{% url 'locations' %}">{% ui_icon "refresh" 15 %} 重設篩選</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

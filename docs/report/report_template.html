@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skyline Weather｜期中專題報告</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="report.css">
+</head>
+<body>
+
+<!-- ============================ 01 COVER ============================ -->
+<section class="slide cover">
+  <div class="pad">
+    <div class="cover-top">
+      <div class="cover-brand">
+        <span class="mark">☀</span>
+        <span>SKYLINE WEATHER</span>
+      </div>
+      <div class="cover-course">{{COURSE}}<br>Midterm Project · 2026</div>
+    </div>
+
+    <div class="cover-main">
+      <div class="cover-kicker">From Bad UI audit to a working product</div>
+      <h1>Skyline<br><span>Weather</span></h1>
+      <div class="cover-sub">把天氣講清楚，也把選擇權還給使用者。</div>
+      <p class="cover-copy">
+        從 weather.gov 的 8 項 Bad UI 問題與 9 張 Redesign 分鏡出發，
+        以 Django、Neon PostgreSQL 與 Render 實作可操作的前台、會員系統與管理後台。
+      </p>
+      <div class="cover-meta">
+        <div><small>組別</small><b>{{GROUP}}</b></div>
+        <div><small>組員</small><b>{{MEMBERS}}</b></div>
+        <div><small>繳交日期</small><b>{{DATE}}</b></div>
+      </div>
+    </div>
+
+    <div class="cover-bottom">
+      <div class="cover-dates">介面設計期中專題 · <b>2026.11.01</b> · 5 pages / 8 models / 12 tests</div>
+      <div class="cover-tags">
+        <span class="cover-tag">Django 6.1</span>
+        <span class="cover-tag">Neon PostgreSQL</span>
+        <span class="cover-tag">Render</span>
+      </div>
+    </div>
+    <div class="cover-shot" role="img" aria-label="Skyline Weather 首頁預覽"></div>
+  </div>
+</section>
+
+<!-- ============================ 02 OVERVIEW ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">01 · Project at a glance</div>
+        <h2 class="s-title">不是重做一個天氣網站，<br>而是把一份調查變成可操作的產品。</h2>
+        <p class="s-sub">Same data, clearer decisions. 從「看懂天氣」到「知道下一步」。</p>
+      </div>
+      <div class="s-side"><b>5</b>front-end pages<br>Django + Neon</div>
+    </div>
+
+    <div class="metric-row">
+      <div class="card metric"><div class="n">5<small>pages</small></div><div class="l">前台主要頁面</div><div class="d">今天／城市／詳情／警報／會員</div></div>
+      <div class="card metric alt"><div class="n">12<small>cities</small></div><div class="l">城市資料</div><div class="d">含 8 則生效警報與 7 日預報</div></div>
+      <div class="card metric warn"><div class="n">8<small>models</small></div><div class="l">資料模型</div><div class="d">前台查詢與後台管理共用</div></div>
+      <div class="card metric sev"><div class="n">12<small>tests</small></div><div class="l">自動化測試</div><div class="d">頁面、查詢、會員、後台</div></div>
+    </div>
+
+    <div class="grid-2 mt20" style="grid-template-columns:1.1fr .9fr;">
+      <div class="card" style="padding:16px 18px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="font-size:13px;font-weight:900;">五個頁面，對應五種任務</h3>
+          <span class="pill">3–5 pages requirement</span>
+        </div>
+        <div class="mt12" style="display:grid;gap:7px;">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#F7FBFF;border:1px solid #DCEAF8;border-radius:9px;"><b style="color:#1567D3;font-size:10px;">01</b><b style="font-size:10.5px;">今天</b><span class="muted small">現在天氣、12 小時趨勢、可行動建議、7 日</span><span class="pill n" style="margin-left:auto;">/</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#F7FBFF;border:1px solid #DCEAF8;border-radius:9px;"><b style="color:#1567D3;font-size:10px;">02</b><b style="font-size:10.5px;">城市總覽</b><span class="muted small">關鍵字、區域、天氣、溫度、警報、排序</span><span class="pill n" style="margin-left:auto;">/locations/</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#F7FBFF;border:1px solid #DCEAF8;border-radius:9px;"><b style="color:#1567D3;font-size:10px;">03</b><b style="font-size:10.5px;">城市詳情</b><span class="muted small">24 小時、7 日、觀測細節、此城市警報</span><span class="pill n" style="margin-left:auto;">/locations/&lt;slug&gt;/</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#F7FBFF;border:1px solid #DCEAF8;border-radius:9px;"><b style="color:#1567D3;font-size:10px;">04</b><b style="font-size:10.5px;">警報中心</b><span class="muted small">嚴重度、類型、區域、建議行動、時間軸</span><span class="pill n" style="margin-left:auto;">/alerts/</span></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#F7FBFF;border:1px solid #DCEAF8;border-radius:9px;"><b style="color:#1567D3;font-size:10px;">05</b><b style="font-size:10.5px;">會員中心</b><span class="muted small">收藏、查詢紀錄、預設城市、通知門檻</span><span class="pill n" style="margin-left:auto;">/dashboard/</span></div>
+        </div>
+      </div>
+      <div class="card" style="padding:16px 18px;background:linear-gradient(145deg,#0A2E52,#0F4E8F);color:#fff;border:0;">
+        <div style="font-size:10px;letter-spacing:.16em;color:#8ED8F5;font-weight:900;">TECH STACK</div>
+        <h3 style="font-size:18px;font-weight:900;margin-top:6px;color:#fff;">設計系統直接長成程式碼</h3>
+        <p style="font-size:9.5px;color:rgba(255,255,255,.7);line-height:1.7;margin-top:6px;">
+          沿用 Bad UI 作業的 Design Tokens（#1567D3、#0F2438、#35B6E8、溫度色、AQI 色），
+          以 Django Template + 原生 CSS 實作，不依賴前端框架。
+        </p>
+        <div class="mt12" style="display:flex;flex-wrap:wrap;gap:5px;">
+          <span class="cover-tag">Django 6.1</span><span class="cover-tag">Neon PostgreSQL</span><span class="cover-tag">Render</span><span class="cover-tag">Gunicorn</span><span class="cover-tag">Whitenoise</span><span class="cover-tag">Selenium</span>
+        </div>
+        <div class="mt16" style="display:flex;gap:18px;">
+          <div><b style="font-size:21px;font-weight:900;">12</b><div style="font-size:8px;color:rgba(255,255,255,.55);">城市 × 7 日預報</div></div>
+          <div><b style="font-size:21px;font-weight:900;">360</b><div style="font-size:8px;color:rgba(255,255,255,.55);">逐時預報資料</div></div>
+          <div><b style="font-size:21px;font-weight:900;">100%</b><div style="font-size:8px;color:rgba(255,255,255,.55);">測試通過</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-3 mt12" style="gap:8px;">
+      <div class="card" style="padding:8px 11px;display:flex;align-items:center;gap:9px;"><span class="pill">01</span><div><b style="font-size:9px;">Audit</b><div class="small muted">weather.gov 8 項問題</div></div></div>
+      <div class="card" style="padding:8px 11px;display:flex;align-items:center;gap:9px;"><span class="pill">02</span><div><b style="font-size:9px;">Design</b><div class="small muted">9 張分鏡 + Design Tokens</div></div></div>
+      <div class="card" style="padding:8px 11px;display:flex;align-items:center;gap:9px;"><span class="pill g">03</span><div><b style="font-size:9px;">Build</b><div class="small muted">Django + Neon + Render</div></div></div>
+    </div>
+    <div class="pg"><b>02</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 03 REQUIREMENTS ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">02 · Requirement framing</div>
+        <h2 class="s-title">起點不是「做一個網站」，<br>而是解決 8 個被量化的問題。</h2>
+        <p class="s-sub">課程要求：5 頁前台、登入前後差異、多元查詢、Django 後台、Neon、雲端部署與 10 組 AI Prompt。</p>
+      </div>
+      <div class="s-side"><b>8</b>Bad UI issues<br>→ 8 design decisions</div>
+    </div>
+
+    <div class="split-55-45">
+      <div>
+        <div class="card" style="padding:16px 18px;">
+          <h3 style="font-size:13px;font-weight:900;">從 homework 帶進來的三個限制</h3>
+          <div class="mt12" style="display:grid;gap:9px;">
+            <div style="display:flex;gap:9px;"><span style="width:19px;height:19px;border-radius:50%;background:#EAF2FD;color:#0B4EA6;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:0 0 19px;margin-top:1px;">1</span><div><b style="font-size:10px;">資訊層級不能只是「變漂亮」</b><p class="small muted">原首頁 113 個連結、3 個搜尋框；新首頁只保留現在、建議、預報、警報四件事。</p></div></div>
+            <div style="display:flex;gap:9px;"><span style="width:19px;height:19px;border-radius:50%;background:#EAF2FD;color:#0B4EA6;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:0 0 19px;margin-top:1px;">2</span><div><b style="font-size:10px;">同一個資料，前台與後台都要能用</b><p class="small muted">不是做一個靜態 mockup：城市、預報、警報、會員都進資料庫，後台可編修。</p></div></div>
+            <div style="display:flex;gap:9px;"><span style="width:19px;height:19px;border-radius:50%;background:#EAF2FD;color:#0B4EA6;font-size:9px;font-weight:900;display:flex;align-items:center;justify-content:center;flex:0 0 19px;margin-top:1px;">3</span><div><b style="font-size:10px;">設計決策要能對回 Persona</b><p class="small muted">通勤族需要 30 秒內做決定；戶外活動者需要時段建議；緊急人員需要影響範圍與行動。</p></div></div>
+          </div>
+        </div>
+        <div class="mt12" style="display:flex;gap:8px;">
+          <div class="card" style="flex:1;padding:10px 12px;"><b style="font-size:9.5px;">單一搜尋入口</b><div class="small muted">Ctrl K / 城市建議</div></div>
+          <div class="card" style="flex:1;padding:10px 12px;"><b style="font-size:9.5px;">可行動摘要</b><div class="small muted">帶傘、最佳時段、AQI</div></div>
+          <div class="card" style="flex:1;padding:10px 12px;"><b style="font-size:9.5px;">登入個人化</b><div class="small muted">收藏、預設城市、通知</div></div>
+          <div class="card" style="flex:1;padding:10px 12px;"><b style="font-size:9.5px;">可管理後台</b><div class="small muted">8 個模型、搜尋篩選</div></div>
+        </div>
+      </div>
+
+      <div class="stat-stack">
+        <div class="card stat-card"><div class="big">113</div><div class="copy"><b>首頁連結數</b><span>原始 weather.gov 首頁；使用者必須自己判斷哪些連結才有用。</span></div></div>
+        <div class="card stat-card"><div class="big blue">77%</div><div class="copy"><b>文字 ≤ 12px</b><span>首頁 77%、預報頁 75%；在 1280px 視窗下閱讀負擔高。</span></div></div>
+        <div class="card stat-card"><div class="big green">67 / 40</div><div class="copy"><b>Lighthouse 分數</b><span>無障礙 67、SEO 40；成為本期把對比、標題層級與語意結構做好的依據。</span></div></div>
+        <div class="card" style="padding:10px 13px;background:#FFF8E9;border-color:#F2D59A;">
+          <div class="small" style="color:#7A5806;line-height:1.6;"><b>課程原文：</b>「完成可操作的前端網站、Django 管理後台與 Neon PostgreSQL 資料庫，並將前後台部署至雲端。」</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-4 mt16" style="gap:8px;">
+      <div class="mini-req"><span class="tick">✓</span><div><b>5 頁前台</b><span>今天／城市／詳情／警報／會員</span></div></div>
+      <div class="mini-req"><span class="tick">✓</span><div><b>登入前後差異</b><span>收藏、預設城市、通知門檻</span></div></div>
+      <div class="mini-req"><span class="tick">✓</span><div><b>多元查詢</b><span>6 種城市條件 + 4 種警報條件</span></div></div>
+      <div class="mini-req"><span class="tick">✓</span><div><b>Django 管理後台</b><span>8 模型、搜尋、篩選、批次動作</span></div></div>
+      <div class="mini-req"><span class="tick">✓</span><div><b>Neon PostgreSQL</b><span>前後台共用同一份資料</span></div></div>
+      <div class="mini-req"><span class="tick">✓</span><div><b>雲端部署</b><span>Render + health check + 測試帳號</span></div></div>
+      <div class="mini-req"><span class="tick">✓</span><div><b>10 組 AI Prompt</b><span>前期 8 + 本期 2，含成果對照</span></div></div>
+      <div class="mini-req"><span class="tick">✓</span><div><b>期中報告 PDF</b><span>8 大段落 + 實際網站截圖</span></div></div>
+    </div>
+    <div class="pg"><b>03</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 04 BAD UI ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">03 · Bad UI findings</div>
+        <h2 class="s-title">8 個問題，對應 8 個設計決策。</h2>
+        <p class="s-sub">前期以 6 張原始截圖、量化統計與 Lighthouse 建立問題清單；本期把每一項變成畫面與程式。</p>
+      </div>
+      <div class="s-side"><b>8</b>issues<br>6 annotated shots</div>
+    </div>
+
+    <div class="split-60-40">
+      <div class="issue-grid">
+        <div class="issue"><div class="ih"><span>1</span>資訊層級失衡</div><p>113 個連結、3 個搜尋框搶注意力。<em>→ 任務導向首頁、單一搜尋。</em></p></div>
+        <div class="issue"><div class="ih"><span>2</span>搜尋與導覽不一致</div><p>首頁與預報頁各有不同搜尋樣式。<em>→ 全站一致搜尋與 tabs。</em></p></div>
+        <div class="issue"><div class="ih"><span>3</span>視覺語言分裂</div><p>多套標題、按鈕、連結與表格樣式。<em>→ Design Tokens 與元件。</em></p></div>
+        <div class="issue"><div class="ih"><span>4</span>字級過小、密度過高</div><p>77% 文字 ≤ 12px，資訊牆難以掃讀。<em>→ 內文 14px、輔助 12.5px。</em></p></div>
+        <div class="issue"><div class="ih"><span>5</span>預報難以行動</div><p>大量文字與術語，缺少「所以呢？」<em>→ 可行動摘要與最佳時段。</em></p></div>
+        <div class="issue"><div class="ih"><span>6</span>技術術語與版本切換</div><p>KML、AFD、Versions 1–50 對一般使用者無意義。<em>→ 分層揭露、白話優先。</em></p></div>
+        <div class="issue"><div class="ih"><span>7</span>警報與地點脫節</div><p>Active Alerts 沒有影響區域與建議行動。<em>→ 警報中心 + 行動指南。</em></p></div>
+        <div class="issue"><div class="ih"><span>8</span>裝飾元素搶焦點</div><p>靜態地圖與公告佔據首屏。<em>→ 首屏任務優先，公告降級。</em></p></div>
+      </div>
+
+      <div>
+        <div class="browser">
+          <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">weather.gov · annotated</span></div>
+          <img src="assets/badui-annotated.jpg" alt="weather.gov Bad UI 標註圖" style="height:342px;object-fit:cover;">
+        </div>
+        <div class="shot-caption"><b>圖 1</b>　前期報告的標註圖（節錄）。完整 6 張標註與 8 項問題見 homework 報告。</div>
+        <div class="card mt12" style="padding:10px 12px;">
+          <div class="small muted">量化證據</div>
+          <div style="display:flex;gap:14px;margin-top:4px;">
+            <div><b style="font-size:18px;color:#D92D20;">113</b><div class="small muted">links</div></div>
+            <div><b style="font-size:18px;color:#1567D3;">77%</b><div class="small muted">≤12px</div></div>
+            <div><b style="font-size:18px;color:#0E7A36;">67</b><div class="small muted">a11y</div></div>
+            <div><b style="font-size:18px;color:#9A6A05;">40</b><div class="small muted">SEO</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pg"><b>04</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 05 SPEC ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">04 · Goals &amp; site spec</div>
+        <h2 class="s-title">改善目的：讓每一頁都回答一個問題。</h2>
+        <p class="s-sub">五個頁面不是五個展示畫面，而是一條從「現在」到「接下來」再到「需要行動」的決策路徑。</p>
+      </div>
+      <div class="s-side"><b>4</b>design principles<br>5 pages</div>
+    </div>
+
+    <div class="grid-4">
+      <div class="card principle"><div class="ic">01</div><h3>任務優先</h3><p>首屏先回答現在天氣與是否需要注意，再把預報細節往下放。</p></div>
+      <div class="card principle"><div class="ic">02</div><h3>一致的語言</h3><p>同一套色彩、字級、按鈕與導覽；前台與後台都使用相同的資料命名。</p></div>
+      <div class="card principle"><div class="ic">03</div><h3>可行動</h3><p>每個數字旁邊都給出「所以呢」：帶傘、最佳時段、警報行動。</p></div>
+      <div class="card principle"><div class="ic">04</div><h3>可及性</h3><p>內文 14px、輔助 12.5px、對比 ≥4.5:1、焦點樣式與 skip link。</p></div>
+    </div>
+
+    <div class="table-wrap mt16">
+      <table>
+        <thead><tr><th style="width:15%;">頁面</th><th style="width:26%;">對應的 Bad UI 問題</th><th style="width:36%;">主要功能</th><th>登入前後差異</th></tr></thead>
+        <tbody>
+          <tr><td><b>今天</b><br><span class="small muted">/</span></td><td>資訊層級、密度、裝飾搶焦點</td><td>即時觀測、12 小時趨勢、可行動建議、3 日與 7 日、警報摘要</td><td>訪客看 New York；會員看預設城市</td></tr>
+          <tr><td><b>城市總覽</b><br><span class="small muted">/locations/</span></td><td>搜尋不一致、113 個連結</td><td>關鍵字、區域、天氣、溫度區間、有無警報、排序、分頁</td><td>訪客可查；會員留下查詢紀錄</td></tr>
+          <tr><td><b>城市詳情</b><br><span class="small muted">/locations/&lt;slug&gt;/</span></td><td>預報難掃讀、術語過多</td><td>24 小時、7 日、觀測細節、此城市警報、鄰近城市</td><td>收藏按鈕；登入後可加入收藏</td></tr>
+          <tr><td><b>警報中心</b><br><span class="small muted">/alerts/</span></td><td>警報與地點脫節、缺行動</td><td>嚴重度／類型／區域／關鍵字、時間軸、影響範圍、建議行動</td><td>訂閱通知需登入；訪客可瀏覽</td></tr>
+          <tr><td><b>會員中心</b><br><span class="small muted">/dashboard/</span></td><td>缺少個人化與回饋</td><td>收藏、最近查詢、收藏城市警報、°F/°C、通知門檻</td><td>登入限定；管理員可進後台</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt12" style="display:flex;gap:8px;">
+      <span class="pill">單一搜尋：Ctrl K</span><span class="pill">12 小時趨勢</span><span class="pill">最佳外出 3 小時</span><span class="pill">AQI 分級</span><span class="pill">警報嚴重度排序</span><span class="pill">收藏與通知門檻</span>
+    </div>
+    <div class="pg"><b>05</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 06 ARCHITECTURE ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">05 · Architecture &amp; data flow</div>
+        <h2 class="s-title">一個 Django 專案，前台與後台共用同一份資料。</h2>
+        <p class="s-sub">Neon 是唯一的資料來源；Django ORM 同時服務前台查詢、會員功能與管理後台。</p>
+      </div>
+      <div class="s-side"><b>1</b>database<br>2 surfaces</div>
+    </div>
+
+    <div class="arch">
+      <div class="arch-flow">
+        <div class="arch-node front">
+          <span class="tag">CLIENT</span>
+          <h4>瀏覽器</h4>
+          <ul><li>Django Template + CSS + JS</li><li>5 個頁面、RWD、無框架</li><li>搜尋建議 / 單位切換</li></ul>
+        </div>
+        <div class="arch-link"><span>HTTPS</span><div class="line"></div><span>Render</span></div>
+        <div class="arch-node core">
+          <span class="tag">RENDER</span>
+          <h4>Django 6.1</h4>
+          <ul><li>Gunicorn + Whitenoise</li><li>Views / Templates / Forms</li><li>Auth + Session + Messages</li><li>Django Admin（後台）</li></ul>
+        </div>
+        <div class="arch-link"><span>ORM / psycopg</span><div class="line"></div><span>DATABASE_URL</span></div>
+        <div class="arch-node db">
+          <span class="tag">NEON</span>
+          <h4>PostgreSQL</h4>
+          <ul><li>8 個資料模型</li><li>會員、城市、預報、警報</li><li>後台修改即時反映前台</li></ul>
+        </div>
+      </div>
+
+      <div class="arch-bottom">
+        <div class="arch-side"><b>GitHub → Render</b>　push 後自動 build；`build.sh` 安裝套件、collectstatic、migrate、種子資料（僅空資料庫）。</div>
+        <div class="arch-side"><b>Admin → Django</b>　教師以管理員帳號登入 `/admin/`，直接新增城市、修改預報、啟停警報。</div>
+        <div class="arch-side"><b>Health check</b>　`/healthz/` 執行 `SELECT 1`，同時確認 Django 與 Neon 都活著。</div>
+      </div>
+
+      <div class="flow-strip">
+        <div class="flow-step"><b>Request</b>瀏覽器送出 URL / 查詢參數</div>
+        <div class="flow-step"><b>View</b>權限、篩選、Paginator、溫度單位</div>
+        <div class="flow-step"><b>ORM</b>Location / Forecast / Alert</div>
+        <div class="flow-step"><b>Neon</b>回傳資料列</div>
+        <div class="flow-step"><b>Template</b>SVG icon、sparkline、卡片</div>
+        <div class="flow-step"><b>Response</b>HTML + CSS + JS</div>
+      </div>
+
+    </div>
+
+    <div class="grid-2 mt12" style="gap:12px;align-items:stretch;grid-template-columns:1.25fr .75fr;">
+      <div class="card" style="padding:10px 13px;">
+        <div class="small" style="font-weight:900;letter-spacing:.1em;color:#0B3B6A;margin-bottom:5px;">DEPLOY PIPELINE · GITHUB → RENDER</div>
+        <div class="pipeline">
+          <div class="pipe-step done"><b>Push</b><span>GitHub main</span></div>
+          <div class="pipe-step done"><b>Build</b><span>pip install</span></div>
+          <div class="pipe-step done"><b>Collect</b><span>Whitenoise</span></div>
+          <div class="pipe-step done"><b>Migrate</b><span>Neon schema</span></div>
+          <div class="pipe-step done"><b>Seed</b><span>if empty</span></div>
+          <div class="pipe-step done"><b>Live</b><span>healthz</span></div>
+        </div>
+      </div>
+      <div class="code-panel">
+        <div><span class="c"># Render environment</span></div>
+        <div><span class="k">DEBUG</span>=<span class="s">False</span></div>
+        <div><span class="k">DATABASE_URL</span>=<span class="s">postgresql://...neon.tech/neondb?sslmode=require</span></div>
+        <div><span class="k">ALLOWED_HOSTS</span>=<span class="s">.onrender.com</span></div>
+        <div><span class="k">CSRF_TRUSTED_ORIGINS</span>=<span class="s">https://*.onrender.com</span></div>
+      </div>
+    </div>
+
+    <div class="grid-3 mt10" style="gap:8px;">
+      <div class="card" style="padding:8px 11px;"><b style="font-size:9px;">Why Django Template?</b><div class="small muted" style="margin-top:2px;">不用 SPA build；表單、權限、SEO 與部署一次處理，適合兩週內交付。</div></div>
+      <div class="card" style="padding:8px 11px;"><b style="font-size:9px;">Why Neon?</b><div class="small muted" style="margin-top:2px;">雲端 PostgreSQL、免費方案、連線字串可直接放 Render 環境變數。</div></div>
+      <div class="card" style="padding:8px 11px;"><b style="font-size:9px;">Why Render?</b><div class="small muted" style="margin-top:2px;">GitHub 自動部署、health check、環境變數與免費 Demo 一次到位。</div></div>
+    </div>
+    <div class="pg"><b>06</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 07 DATA MODEL ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">06 · Data model</div>
+        <h2 class="s-title">8 個模型，支撐 5 個頁面與 1 個後台。</h2>
+        <p class="s-sub">資料模型先對齊 UI 需要的欄位，再讓 Django Admin 直接管理；前台不需要另外寫 API。</p>
+      </div>
+      <div class="s-side"><b>9</b>tables incl. User<br>Neon PostgreSQL</div>
+    </div>
+
+    <div class="model-grid">
+      <div class="model-card user"><h4>使用者</h4><div class="en">django.contrib.auth.User</div><ul><li><b>username</b> / email</li><li>password / is_staff</li><li>last_login</li></ul></div>
+      <div class="model-card user"><h4>會員設定</h4><div class="en">Profile · 1–1 User</div><ul><li><b>unit</b> °F / °C</li><li><b>home_location</b> FK</li><li>notify_app / email / sms</li><li>min_severity</li></ul></div>
+      <div class="model-card user"><h4>收藏</h4><div class="en">Favorite · N–N</div><ul><li><b>user</b> FK</li><li><b>location</b> FK</li><li>unique(user, location)</li></ul></div>
+      <div class="model-card user"><h4>查詢紀錄</h4><div class="en">SearchHistory</div><ul><li><b>query</b> / region</li><li>results_count</li><li>created_at</li></ul></div>
+      <div class="model-card weather"><h4>城市</h4><div class="en">Location</div><ul><li><b>name / state / slug</b></li><li>region / county / ZIP</li><li>lat / lon / timezone / station</li></ul></div>
+      <div class="model-card weather"><h4>即時觀測</h4><div class="en">CurrentConditions · 1–1</div><ul><li><b>temp_f / feels_like_f</b></li><li>condition / humidity / wind</li><li>AQI / UV / visibility</li></ul></div>
+      <div class="model-card weather"><h4>每日 / 逐時</h4><div class="en">DailyForecast · HourlyForecast</div><ul><li><b>date / time</b></li><li>high_f / low_f / temp_f</li><li>precip_percent / wind</li></ul></div>
+      <div class="model-card alert"><h4>警報</h4><div class="en">Alert</div><ul><li><b>severity / type / urgency</b></li><li>starts_at / ends_at / areas</li><li>description / instruction / source</li></ul></div>
+    </div>
+
+    <div class="rel-note">
+      <span class="rel"><b>Location</b> 1–1 <b>CurrentConditions</b></span>
+      <span class="rel"><b>Location</b> 1–N <b>Daily / Hourly / Alert</b></span>
+      <span class="rel"><b>User</b> 1–1 <b>Profile</b></span>
+      <span class="rel"><b>User</b> 1–N <b>Favorite / SearchHistory</b></span>
+      <span class="rel"><b>Profile</b> N–1 <b>Location</b>（預設城市）</span>
+    </div>
+
+    <div class="grid-3 mt12">
+      <div class="card" style="padding:9px 11px;"><b style="font-size:9px;">查詢不 hard-code</b><div class="small muted">溫度、天氣、警報都由 ORM filter 組合；新增城市不用改 view。</div></div>
+      <div class="card" style="padding:9px 11px;"><b style="font-size:9px;">後台所見即前台所得</b><div class="small muted">Django Admin 直接操作同一組 models；修改後重新整理即可看到。</div></div>
+      <div class="card" style="padding:9px 11px;"><b style="font-size:9px;">種子資料可重建</b><div class="small muted">`seed_demo` 以 update_or_create + 重建預報，讓 demo 資料維持在「本週」。</div></div>
+    </div>
+
+    <div class="grid-2 mt12" style="gap:10px;">
+      <div class="card" style="padding:11px 13px;">
+        <div class="small" style="font-weight:900;letter-spacing:.08em;color:#0B3B6A;">MODEL → PAGE</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;">
+          <span class="pill">Location → 首頁／查詢</span><span class="pill">Daily → 7 日</span><span class="pill">Hourly → 24 小時</span><span class="pill r">Alert → 警報中心</span><span class="pill" style="background:#F0EDFC;color:#4C3DA8;">Profile／Favorite／SearchHistory → 會員</span>
+        </div>
+      </div>
+      <div class="card" style="padding:11px 13px;background:#F7FBFF;border-color:#C7DDF8;">
+        <div class="small" style="font-weight:900;letter-spacing:.08em;color:#0B3B6A;">SEEDED DATA · NEON</div>
+        <div style="display:flex;gap:18px;margin-top:4px;">
+          <div><b style="font-size:15px;font-weight:900;color:#1567D3;">12</b><div class="small muted">locations</div></div>
+          <div><b style="font-size:15px;font-weight:900;color:#1567D3;">84</b><div class="small muted">daily</div></div>
+          <div><b style="font-size:15px;font-weight:900;color:#1567D3;">360</b><div class="small muted">hourly</div></div>
+          <div><b style="font-size:15px;font-weight:900;color:#1567D3;">8</b><div class="small muted">alerts</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pg"><b>07</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 08 HOME ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">07 · Front-end · 01</div>
+        <h2 class="s-title">首頁：把「現在該做什麼」放在第一屏。</h2>
+        <p class="s-sub">訪客預設 New York；登入後自動切換到會員設定的預設城市與 °F/°C。</p>
+      </div>
+      <div class="s-side"><b>/</b>Today<br>first screen</div>
+    </div>
+
+    <div class="split-60-40">
+      <div>
+        <div class="browser">
+          <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">skyline-weather.onrender.com/</span></div>
+          <img src="assets/home-hero.jpg" alt="Skyline Weather 首頁" style="height:462px;object-fit:cover;object-position:top;">
+        </div>
+        <div class="shot-caption"><b>圖 2</b>　首頁實際畫面（1440px 視窗，Selenium 擷取）。包含警報、現在天氣、12 小時趨勢、可行動建議與 3 日預報。</div>
+      </div>
+      <div>
+        <div class="callout-list">
+          <div class="callout"><span class="num">1</span><div><h4>警報 strip：先講最嚴重的事</h4><p>只顯示與目前城市相關的最高嚴重度警報；可關閉，不永久佔用版面。</p></div></div>
+          <div class="callout"><span class="num">2</span><div><h4>Now card：溫度＋體感＋高低溫</h4><p>大字溫度、SVG 天氣圖示、濕度／風／能見度／AQI 一次看到，避免來回切頁。</p></div></div>
+          <div class="callout"><span class="num">3</span><div><h4>可行動建議：回答「所以呢」</h4><p>降雨機率、最佳外出 3 小時、AQI 分級與風勢，直接給出行動建議。</p></div></div>
+          <div class="callout"><span class="num">4</span><div><h4>7 日：週末標記＋降雨長條</h4><p>高低溫、降雨機率與風勢同一個視線高度；週末以藍框標記。</p></div></div>
+        </div>
+        <div class="card mt16" style="padding:10px 12px;background:#F7FBFF;border-color:#C7DDF8;">
+          <div class="small" style="color:#0B3B6A;font-weight:800;">設計對應</div>
+          <div class="small muted" style="margin-top:2px;">原網站 113 個連結 → 首頁 4 個任務區塊；原本需要 3 次點擊的天氣判斷，現在第一屏完成。</div>
+        </div>
+        <div style="display:flex;gap:7px;margin-top:10px;">
+          <div class="card" style="flex:1;padding:8px 10px;"><b style="font-size:16px;color:#D92D20;">113→4</b><div class="small muted">連結 → 任務區塊</div></div>
+          <div class="card" style="flex:1;padding:8px 10px;"><b style="font-size:16px;color:#1567D3;">3→1</b><div class="small muted">搜尋框 → 單一入口</div></div>
+          <div class="card" style="flex:1;padding:8px 10px;"><b style="font-size:16px;color:#0E7A36;">12→14</b><div class="small muted">最小字級 (px)</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pg"><b>08</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 09 LOCATIONS ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">08 · Front-end · 02</div>
+        <h2 class="s-title">城市總覽：把 6 種查詢條件放在同一張表單。</h2>
+        <p class="s-sub">關鍵字、區域、天氣、溫度區間、有無警報、排序；訪客可用，會員的查詢會寫入紀錄。</p>
+      </div>
+      <div class="s-side"><b>12</b>cities<br>9 per page</div>
+    </div>
+
+    <div class="split-60-40">
+      <div>
+        <div class="browser">
+          <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">skyline-weather.onrender.com/locations/</span></div>
+          <img src="assets/locations-top.jpg" alt="城市總覽與篩選" style="height:462px;object-fit:cover;object-position:top;">
+        </div>
+        <div class="shot-caption"><b>圖 3</b>　城市總覽：篩選器、結果數量、排序、卡片與分頁。卡片直接顯示現在溫度、體感、今日高低溫與警報數。</div>
+      </div>
+      <div>
+        <div class="card" style="padding:14px 16px;">
+          <div class="small muted" style="font-weight:800;letter-spacing:.08em;">QUERY DIMENSIONS</div>
+          <div class="mt8" style="display:grid;gap:7px;">
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span>關鍵字</span><b>城市／州／郡／ZIP</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span>區域</span><b>東北／東南／中西部…</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span>天氣</span><b>晴／雨／雷雨／雪…</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span>溫度</span><b>°F 區間 min–max</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span>警報</span><b>僅顯示有生效警報</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:9.5px;"><span>排序</span><b>州別／溫度／警報數</b></div>
+          </div>
+        </div>
+        <div class="card mt12" style="padding:12px 14px;background:#0A2E52;color:#fff;border:0;">
+          <div class="small" style="color:#8ED8F5;font-weight:800;letter-spacing:.08em;">EXAMPLE</div>
+          <div style="font-size:8.2px;color:rgba(255,255,255,.8);word-break:break-all;line-height:1.7;margin-top:4px;">/locations/?q=New+York&amp;region=northeast&amp;condition=partly_cloudy&amp;temp_min=50&amp;temp_max=70&amp;alerts=1</div>
+          <div class="mt8" style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="pill g">符合 1 筆</span><span class="pill">保留 query string</span><span class="pill n">paginator</span>
+          </div>
+        </div>
+        <div class="callout-list mt12">
+          <div class="callout"><span class="num">1</span><div><h4>訪客可直接查詢</h4><p>不需要登入；登入後同一組 query 會寫入 SearchHistory，會員中心可一鍵重查。</p></div></div>
+          <div class="callout"><span class="num">2</span><div><h4>空結果也有下一步</h4><p>顯示重設篩選 CTA，不讓使用者卡在空白頁。</p></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="pg"><b>09</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 10 DETAIL ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">09 · Front-end · 03</div>
+        <h2 class="s-title">城市詳情：一頁完成「現在、接下來、要注意」。</h2>
+        <p class="s-sub">24 小時逐時、7 日、觀測細節與此城市警報集中在同一頁，減少來回切換。</p>
+      </div>
+      <div class="s-side"><b>24h</b>hourly<br>7-day</div>
+    </div>
+
+    <div class="split-60-40">
+      <div>
+        <div class="browser">
+          <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">/locations/new-york-ny/</span></div>
+          <img src="assets/detail-top.jpg" alt="城市詳情：現在天氣與逐時" style="height:280px;object-fit:cover;object-position:top;">
+        </div>
+        <div class="browser mt8">
+          <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">/locations/new-york-ny/#week</span></div>
+          <img src="assets/detail-week.jpg" alt="城市詳情：7 日預報" style="height:150px;object-fit:cover;object-position:center 40%;">
+        </div>
+        <div class="shot-caption"><b>圖 4</b>　同一頁的兩個區段：現在／逐時與 7 日；捲動即可比較。</div>
+      </div>
+      <div>
+        <div class="card" style="padding:14px 16px;">
+          <h3 style="font-size:12px;font-weight:900;">觀測細節：不下判斷，先給原始資訊</h3>
+          <div class="mt8" style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+            <div style="background:#F7FBFF;border:1px solid #DCEAF8;border-radius:8px;padding:6px 8px;"><div class="small muted">體感</div><b style="font-size:13px;">56°F</b></div>
+            <div style="background:#F7FBFF;border:1px solid #DCEAF8;border-radius:8px;padding:6px 8px;"><div class="small muted">能見度</div><b style="font-size:13px;">10.0 mi</b></div>
+            <div style="background:#F7FBFF;border:1px solid #DCEAF8;border-radius:8px;padding:6px 8px;"><div class="small muted">紫外線</div><b style="font-size:13px;">3 中等</b></div>
+            <div style="background:#F7FBFF;border:1px solid #DCEAF8;border-radius:8px;padding:6px 8px;"><div class="small muted">AQI</div><b style="font-size:13px;">32 良好</b></div>
+          </div>
+        </div>
+        <div class="callout-list mt12">
+          <div class="callout"><span class="num">1</span><div><h4>24 小時：水平時間軸</h4><p>每個小時都有圖示、溫度、降雨機率與風速；第一格標記「現在」。</p></div></div>
+          <div class="callout"><span class="num">2</span><div><h4>7 日：週末與降雨並列</h4><p>週末以藍框標記；降雨長條與百分比同時呈現，不靠顏色猜測。</p></div></div>
+          <div class="callout"><span class="num">3</span><div><h4>城市警報 + 鄰近城市</h4><p>把「這個城市現在要注意什麼」與「附近天氣」放在同一段。</p></div></div>
+        </div>
+        <div class="mt12" style="display:flex;gap:6px;flex-wrap:wrap;"><span class="pill">24 hourly rows</span><span class="pill">7 daily rows</span><span class="pill">alert count</span><span class="pill n">favorite</span></div>
+        <div class="card mt10" style="padding:9px 11px;background:#F7FBFF;border-color:#C7DDF8;">
+          <div class="small" style="font-weight:800;color:#0B3B6A;">Before → After</div>
+          <div class="small muted" style="margin-top:2px;">原本：首頁 → 搜尋 → 預報 → 細節，至少 4 個步驟。現在：一頁同時看到現在、24 小時、7 日與警報。</div>
+        </div>
+      </div>
+    </div>
+    <div class="pg"><b>10</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 11 ALERTS ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">10 · Front-end · 04</div>
+        <h2 class="s-title">警報中心：從「一堆警示」變成「可行動指南」。</h2>
+        <p class="s-sub">依嚴重度排序，支援嚴重度、類型、區域與關鍵字；每一則都有影響區域、時間軸與建議行動。</p>
+      </div>
+      <div class="s-side"><b>8</b>active alerts<br>2 severe</div>
+    </div>
+
+    <div class="split-60-40">
+      <div>
+        <div class="browser">
+          <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">skyline-weather.onrender.com/alerts/</span></div>
+          <img src="assets/alerts-top.jpg" alt="警報中心" style="height:462px;object-fit:cover;object-position:top;">
+        </div>
+        <div class="shot-caption"><b>圖 5</b>　警報中心：統計、篩選、嚴重度色條、類型圖示與影響區域；右側是等級說明與訂閱 CTA。</div>
+      </div>
+      <div>
+        <div class="metric-row" style="grid-template-columns:repeat(3,1fr);gap:7px;">
+          <div class="card metric sev" style="padding:9px 10px;"><div class="n" style="font-size:23px;">2</div><div class="l" style="font-size:8.5px;">Severe</div></div>
+          <div class="card metric warn" style="padding:9px 10px;"><div class="n" style="font-size:23px;">5</div><div class="l" style="font-size:8.5px;">Moderate</div></div>
+          <div class="card metric" style="padding:9px 10px;"><div class="n" style="font-size:23px;">1</div><div class="l" style="font-size:8.5px;">Minor</div></div>
+        </div>
+        <div class="callout-list mt12">
+          <div class="callout"><span class="num">1</span><div><h4>先分級，再過濾</h4><p>嚴重度色條＋排序；使用者不用自己判斷哪一則最重要。</p></div></div>
+          <div class="callout"><span class="num">2</span><div><h4>影響區域與時間</h4><p>城市、郡、具體區域與有效時段；不再只有一個 Active Alerts 連結。</p></div></div>
+          <div class="callout"><span class="num">3</span><div><h4>建議行動</h4><p>詳情頁把 NWS 指引轉成編號步驟，並提供「加入收藏」與通知設定。</p></div></div>
+          <div class="callout"><span class="num">4</span><div><h4>會員通知門檻</h4><p>App／Email／SMS 與最低嚴重度；從「看警報」走到「被通知」。</p></div></div>
+        </div>
+        <div class="card mt12" style="padding:9px 11px;background:#FFF4F3;border-color:#F3BCB6;">
+          <div class="small" style="color:#8C2118;font-weight:800;">設計對應：原網站問題 7</div>
+          <div class="small" style="color:#8C2118;margin-top:2px;">警報與地點脫節 → 每則警報都有主要城市、影響區域與行動連結。</div>
+        </div>
+        <div class="card mt10" style="padding:9px 11px;">
+          <div class="small" style="font-weight:800;color:#0B3B6A;">查詢參數也可分享</div>
+          <div class="small muted" style="margin-top:2px;">`?severity=severe&amp;region=northeast` 可直接篩出「東北部嚴重警報」，報告與 demo 都能重現。</div>
+        </div>
+      </div>
+    </div>
+    <div class="pg"><b>11</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 12 MEMBER ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">11 · Login &amp; member area</div>
+        <h2 class="s-title">登入前後：同一份資料，不同的個人化層次。</h2>
+        <p class="s-sub">訪客完成公開查詢；會員多一層「記得我」：預設城市、收藏、單位、查詢紀錄與通知門檻。</p>
+      </div>
+      <div class="s-side"><b>2</b>states<br>guest / member</div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="browser">
+          <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">/accounts/login/</span></div>
+          <img src="assets/login-top.jpg" alt="登入頁" style="height:284px;object-fit:cover;object-position:top;">
+        </div>
+        <div class="shot-caption"><b>圖 6</b>　登入頁：左側品牌與價值主張，右側表單與展示帳號；錯誤訊息與焦點樣式完整。</div>
+        <div class="mt8" style="display:flex;gap:6px;flex-wrap:wrap;"><span class="pill n">訪客：可查詢</span><span class="pill n">收藏 → 引導登入</span><span class="pill n">無查詢紀錄</span></div>
+      </div>
+
+      <div>
+        <div class="browser">
+          <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">/dashboard/ · demo</span></div>
+          <img src="assets/dashboard-top.jpg" alt="會員中心" style="height:284px;object-fit:cover;object-position:top;">
+        </div>
+        <div class="shot-caption"><b>圖 7</b>　會員中心：3 個收藏、1 則收藏城市警報、4 筆查詢、偏好設定與通知開關。</div>
+        <div class="mt8" style="display:flex;gap:6px;flex-wrap:wrap;"><span class="pill g">收藏 3</span><span class="pill g">預設 New York</span><span class="pill g">°F / °C</span><span class="pill g">通知門檻</span></div>
+      </div>
+    </div>
+
+    <div class="grid-4 mt16">
+      <div class="card" style="padding:9px 11px;"><b style="font-size:9.2px;">首頁記住城市</b><div class="small muted">Profile.home_location；登入後首頁自動切換。</div></div>
+      <div class="card" style="padding:9px 11px;"><b style="font-size:9.2px;">收藏與移除</b><div class="small muted">Favorite unique(user, location)；POST + next 安全導回。</div></div>
+      <div class="card" style="padding:9px 11px;"><b style="font-size:9.2px;">查詢紀錄</b><div class="small muted">SearchHistory 只記登入者；會員中心一鍵重查。</div></div>
+      <div class="card" style="padding:9px 11px;"><b style="font-size:9.2px;">通知偏好</b><div class="small muted">App／Email／SMS + 最低嚴重度；與警報中心連動。</div></div>
+    </div>
+    <div class="card mt12" style="padding:9px 13px;display:flex;align-items:center;gap:12px;">
+      <b style="font-size:9px;color:#0B3B6A;white-space:nowrap;">安全與權限</b>
+      <span class="small muted">`@login_required` 保護會員頁</span><span class="small muted">· POST + CSRF 收藏切換</span><span class="small muted">· `next` 重新導向主機驗證</span><span class="small muted">· 密碼使用 Django hash</span>
+      <span class="pill g" style="margin-left:auto;">admin 專屬後台</span>
+    </div>
+    <div class="pg"><b>12</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 13 ADMIN ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">12 · Django admin &amp; database</div>
+        <h2 class="s-title">後台不是附件，是網站資料的來源。</h2>
+        <p class="s-sub">8 個模型全部註冊到 Django Admin；城市、觀測、預報、警報、會員與收藏都能被搜尋、篩選與修改。</p>
+      </div>
+      <div class="s-side"><b>8</b>models<br>same Neon</div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <div class="browser">
+          <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">/admin/ · admin</span></div>
+          <img src="assets/admin-index.jpg" alt="Django 管理後台" style="height:342px;object-fit:cover;object-position:top;">
+        </div>
+        <div class="shot-caption"><b>圖 8</b>　自訂品牌後的 Django Admin：城市、即時觀測、天氣警報、收藏、會員設定、查詢紀錄、每日／逐時預報。</div>
+      </div>
+      <div>
+        <div class="browser">
+          <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">/admin/forecast/alert/</span></div>
+          <img src="assets/admin-alerts.jpg" alt="警報管理列表" style="height:342px;object-fit:cover;object-position:top;">
+        </div>
+        <div class="shot-caption"><b>圖 9</b>　警報管理：嚴重度 badge、類型、城市、起訖時間、有效狀態與批次啟停 action。</div>
+      </div>
+    </div>
+
+    <div class="grid-4 mt12">
+      <div class="card" style="padding:8px 10px;"><b style="font-size:8.8px;">搜尋 × 篩選</b><div class="small muted">每個 model 都有 search_fields 與 list_filter。</div></div>
+      <div class="card" style="padding:8px 10px;"><b style="font-size:8.8px;">Inline 編輯</b><div class="small muted">城市頁可直接編即時觀測、7 日預報與警報。</div></div>
+      <div class="card" style="padding:8px 10px;"><b style="font-size:8.8px;">批次動作</b><div class="small muted">警報可一次標記有效／失效，適合 demo 前整理。</div></div>
+      <div class="card" style="padding:8px 10px;"><b style="font-size:8.8px;">同一份 Neon</b><div class="small muted">後台修改後，重新整理前台即更新，無需同步脚本。</div></div>
+    </div>
+    <div class="pg"><b>13</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 14 PROMPTS 1 ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">13 · AI prompt log · 1/2</div>
+        <h2 class="s-title">10 組 Prompt，從調查一路走到可操作網站。</h2>
+        <p class="s-sub">前期 8 組完成 Bad UI 調查與 Redesign；本期 2 組把規範讀進來，並把設計落地成 Django 全端專案。</p>
+      </div>
+      <div class="s-side"><b>10</b>prompts<br>8 + 2</div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="prompt-table">
+        <thead><tr><th style="width:5%;">#</th><th style="width:9%;">階段</th><th style="width:30%;">使用目的</th><th>AI 回覆與實際成果</th></tr></thead>
+        <tbody>
+          <tr><td class="pn">1</td><td>調查</td><td>定義作業範圍與交付項目</td><td>8 章節報告架構、分析／Persona／Flow／Redesign 清單</td></tr>
+          <tr><td class="pn">2</td><td>調查</td><td>擷取 weather.gov 6 個操作畫面</td><td>首頁、搜尋、預報、細節、AFD、Active Alerts 截圖</td></tr>
+          <tr><td class="pn">3</td><td>調查</td><td>量化連結數、字級與 Lighthouse</td><td>113 links、77% ≤12px、a11y 67、SEO 40</td></tr>
+          <tr><td class="pn">4</td><td>調查</td><td>找出並標註至少 5 項 Bad UI</td><td>8 項問題、6 張標註圖、對應改善方向</td></tr>
+          <tr><td class="pn">5</td><td>設計</td><td>建立 3 類 Persona / Story / Scenario</td><td>通勤族 Ivy、戶外 Michael、緊急管理 Carla</td></tr>
+          <tr><td class="pn">6</td><td>設計</td><td>設計 3 條 User Flow</td><td>Flow A 查現在／Flow B 規劃週末／Flow C 處理警報</td></tr>
+          <tr><td class="pn">7</td><td>設計</td><td>建立 Design System 與 9 張分鏡</td><td>Tokens + A1–A3、B1–B3、C1–C3；本期直接沿用</td></tr>
+          <tr><td class="pn">8</td><td>設計</td><td>整理前期報告並輸出 PDF</td><td>38 頁 PDF：分析、Persona、Flow、分鏡、Prompt</td></tr>
+          <tr><td class="pn">9</td><td>實作</td><td>閱讀期中規範與交付要求</td><td>5 頁、登入差異、後台、Neon、部署、10 Prompt</td></tr>
+          <tr><td class="pn">10</td><td>實作</td><td>把 homework 實作成 Django 網站</td><td>5 頁前台、8 模型、12 城市、8 警報、12 測試、部署檔</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="phase-row mt12">
+      <div class="phase"><span class="n">01–04</span><div><b>調查 Investigation</b><span>截圖、量化、8 項問題</span></div></div>
+      <div class="phase"><span class="n">05–08</span><div><b>設計 Design</b><span>Persona、Flow、Design System</span></div></div>
+      <div class="phase"><span class="n">09–10</span><div><b>實作 Implementation</b><span>Django、Neon、後台、部署</span></div></div>
+    </div>
+
+    <div class="prompt-note">
+      <b>截圖索引：</b>10 組 Prompt 的實際 OpenCode 對話截圖請依規範附於報告附錄（前期 1–8 於 2026-10-18；本期 9–10 於 2026-10-31）。完整 Prompt 文字與成果對照見 <b>docs/AI_PROMPTS.md</b>。
+    </div>
+    <div class="pg"><b>14</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 15 PROMPTS 2 ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">13 · AI prompt log · 2/2</div>
+        <h2 class="s-title">Prompt 不是「幫我寫」，而是把設計決策說清楚。</h2>
+        <p class="s-sub">本期兩個 Prompt 分別定義「要做什麼」與「用什麼既有設計來做」；AI 產出後仍由我們檢查資料模型、畫面與測試。</p>
+      </div>
+      <div class="s-side"><b>2</b>this sprint<br>9–10</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" style="padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><span class="pill">PROMPT 9</span><span class="small muted">2026-10-31</span></div>
+        <div style="font-size:11px;font-weight:900;margin-top:7px;">「幫我讀一下這份文件，協助我完成介面設計的期中專題」</div>
+        <div class="small muted" style="margin-top:4px;">Attached: 期中專題.pptx</div>
+        <div class="mt8" style="background:#F7FBFF;border:1px solid #DCEAF8;border-radius:9px;padding:8px 10px;font-size:8.8px;line-height:1.65;">
+          <b>AI 回覆：</b>整理 10 頁規範、5 頁前台、登入前後差異、後台／Neon、部署、10 組 Prompt、評分 30/70 與截止日；轉成需求對照表。
+        </div>
+      </div>
+      <div class="card" style="padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;"><span class="pill">PROMPT 10</span><span class="small muted">2026-10-31</span></div>
+        <div style="font-size:11px;font-weight:900;margin-top:7px;">「之前做的 badui homework C:\Users\user\Desktop\bad-ui-homework」</div>
+        <div class="small muted" style="margin-top:4px;">延續 weather.gov 調查與 9 張分鏡</div>
+        <div class="mt8" style="background:#F7FBFF;border:1px solid #DCEAF8;border-radius:9px;padding:8px 10px;font-size:8.8px;line-height:1.65;">
+          <b>AI 回覆：</b>讀取 homework 的截圖、Redesign HTML 與報告，建立 Skyline Weather：5 頁、8 模型、12 城市、會員、後台、Render 部署與 12 個測試。
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3 mt12">
+      <div class="browser">
+        <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">home</span></div>
+        <img src="assets/home-week.jpg" alt="首頁 7 日預報" style="height:195px;object-fit:cover;object-position:top;">
+      </div>
+      <div class="browser">
+        <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">locations</span></div>
+        <img src="assets/locations-top.jpg" alt="城市查詢" style="height:195px;object-fit:cover;object-position:top;">
+      </div>
+      <div class="browser">
+        <div class="browser-bar"><span class="bdot r"></span><span class="bdot y"></span><span class="bdot g"></span><span class="burl">admin</span></div>
+        <img src="assets/admin-alerts.jpg" alt="後台警報管理" style="height:195px;object-fit:cover;object-position:top;">
+      </div>
+    </div>
+
+    <div class="mt12" style="display:flex;gap:8px;">
+      <div class="card" style="flex:1;padding:8px 10px;"><b style="font-size:8.8px;">AI 強項</b><div class="small muted">把規範轉清單、產生初稿、批次檢查與截圖。</div></div>
+      <div class="card" style="flex:1;padding:8px 10px;"><b style="font-size:8.8px;">人工檢查</b><div class="small muted">資料模型、篩選邏輯、RWD、空結果與部署安全性。</div></div>
+      <div class="card" style="flex:1;padding:8px 10px;"><b style="font-size:8.8px;">可重現</b><div class="small muted">seed_demo 重建資料；測試 12/12 通過；截圖由 Selenium 產生。</div></div>
+    </div>
+    <div class="pg"><b>15</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 16 DEPLOY ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">14 · Deployment &amp; testing</div>
+        <h2 class="s-title">部署與測試：從本機到可驗收的連結。</h2>
+        <p class="s-sub">Django + Gunicorn + Whitenoise 部署到 Render；Neon 提供 PostgreSQL；`build.sh` 自動化建置與種子資料。</p>
+      </div>
+      <div class="s-side"><b>12/12</b>tests passed<br>healthz ok</div>
+    </div>
+
+    <div class="split-55-45">
+      <div>
+        <div class="grid-2" style="gap:10px;">
+          <div class="link-box"><small>Front-end</small><b>{{FRONTEND_URL}}</b></div>
+          <div class="link-box"><small>Django Admin</small><b>{{ADMIN_URL}}</b></div>
+        </div>
+        <div class="link-box mt8"><small>GitHub repository</small><b>{{REPO_URL}}</b></div>
+
+        <div class="checklist mt12">
+          <div class="check"><span class="tick">✓</span><div><b>Neon PostgreSQL 連線</b><span>DATABASE_URL + sslmode=require；前台與後台共用。</span></div></div>
+          <div class="check"><span class="tick">✓</span><div><b>Render 建置與啟動</b><span>bash build.sh → collectstatic → migrate → seed_demo --if-empty。</span></div></div>
+          <div class="check"><span class="tick">✓</span><div><b>健康檢查</b><span>`/healthz/` 執行 SELECT 1，回傳 database: up。</span></div></div>
+          <div class="check"><span class="tick">✓</span><div><b>教師測試帳號</b><span>前台 demo / Demo1234!；後台 admin / Admin1234!。</span></div></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="padding:13px 15px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;"><h3 style="font-size:11.5px;font-weight:900;">自動化測試</h3><span class="pill g">12 / 12 pass</span></div>
+          <div class="mt8" style="display:grid;gap:5px;">
+            <div style="display:flex;justify-content:space-between;font-size:8.6px;"><span>公開頁面與 404</span><b style="color:#0E7A36;">PASS</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:8.6px;"><span>城市搜尋／6 種篩選</span><b style="color:#0E7A36;">PASS</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:8.6px;"><span>警報篩選與排序</span><b style="color:#0E7A36;">PASS</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:8.6px;"><span>搜尋 API / 分頁</span><b style="color:#0E7A36;">PASS</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:8.6px;"><span>登入保護與會員偏好</span><b style="color:#0E7A36;">PASS</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:8.6px;"><span>收藏切換 / °F↔°C</span><b style="color:#0E7A36;">PASS</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:8.6px;"><span>註冊建立 Profile</span><b style="color:#0E7A36;">PASS</b></div>
+            <div style="display:flex;justify-content:space-between;font-size:8.6px;"><span>管理員後台 / healthz</span><b style="color:#0E7A36;">PASS</b></div>
+          </div>
+        </div>
+        <div class="card mt10" style="padding:11px 13px;background:#F7FBFF;border-color:#C7DDF8;">
+          <div class="small" style="font-weight:800;color:#0B3B6A;">測試方式</div>
+          <div class="small muted" style="margin-top:2px;">`python manage.py test forecast -v 2`；以 Django TestCase 建立城市／預報／警報／會員 fixture，涵蓋 GET/POST 與權限。</div>
+        </div>
+        <div class="mt10" style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span class="pill">Gunicorn</span><span class="pill">Whitenoise</span><span class="pill">Render Blueprint</span><span class="pill">Neon pooled</span><span class="pill n">free tier cold start</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt12" style="padding:11px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><b style="font-size:9px;letter-spacing:.08em;color:#0B3B6A;">DEPLOY PIPELINE</b><span class="pill g">deployed</span></div>
+      <div class="pipeline">
+        <div class="pipe-step done"><b>1 · GitHub</b><span>push main</span></div>
+        <div class="pipe-step done"><b>2 · Build</b><span>pip install -r</span></div>
+        <div class="pipe-step done"><b>3 · Static</b><span>collectstatic</span></div>
+        <div class="pipe-step done"><b>4 · Neon</b><span>migrate</span></div>
+        <div class="pipe-step done"><b>5 · Seed</b><span>--if-empty</span></div>
+        <div class="pipe-step done"><b>6 · Health</b><span>/healthz/</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2 mt10" style="gap:10px;">
+      <div class="code-panel" style="font-size:7.8px;">
+        <div><span class="c"># Render build log (excerpt)</span></div>
+        <div>Applying forecast.0001_initial... <span class="s">OK</span></div>
+        <div>Seeded 12 locations, 84 daily forecasts, 360 hourly, 8 alerts.</div>
+        <div>Booting worker with pid ... <span class="s">✓</span></div>
+      </div>
+      <div class="card" style="padding:9px 11px;background:#F7FBFF;border-color:#C7DDF8;">
+        <b style="font-size:9px;color:#0B3B6A;">Demo 驗收路徑</b>
+        <div class="small muted" style="margin-top:2px;line-height:1.6;">首頁 → 城市總覽查 Seattle → 登入 demo → 收藏 → 警報中心 Severe → 後台修改警報 → 前台重新整理確認。</div>
+      </div>
+    </div>
+    <div class="pg"><b>16</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 17 CONCLUSION ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">15 · Reflection</div>
+        <h2 class="s-title">學到的不只是 Django，<br>而是把設計決策落地的方法。</h2>
+        <p class="s-sub">從「介面很亂」到「8 個問題、5 個頁面、8 個模型、12 個測試」；每一步都要能對回使用者與資料。</p>
+      </div>
+      <div class="s-side"><b>3</b>takeaways<br>next steps</div>
+    </div>
+
+    <div class="grid-4">
+      <div class="card outcome"><div class="n">8→5</div><h3>問題 → 頁面</h3><p>8 項 Bad UI 問題被收斂成 5 個任務導向頁面，不再用「功能清單」思考。</p></div>
+      <div class="card outcome"><div class="n">9→1</div><h3>分鏡 → 系統</h3><p>9 張 Redesign 分鏡共用一套 Design Tokens，最後長成同一個網站。</p></div>
+      <div class="card outcome"><div class="n">1→8</div><h3>資料 → 後台</h3><p>8 個模型同時服務前台查詢與 Django Admin；資料是產品的一部分。</p></div>
+      <div class="card outcome"><div class="n">12</div><h3>測試 → 信心</h3><p>12 個測試讓每次調整都能快速確認頁面、查詢、會員與後台沒有壞。</p></div>
+    </div>
+
+    <div class="grid-2 mt20">
+      <div class="card" style="padding:15px 17px;">
+        <h3 style="font-size:12px;font-weight:900;">三個學習</h3>
+        <div class="mt8">
+          <div class="learn"><span class="n">1</span><div><b>資料模型決定 UI 的彈性</b><p>先把 Location、Daily、Hourly、Alert 的關聯想清楚，篩選與詳情頁才有辦法自然長出來。</p></div></div>
+          <div class="learn"><span class="n">2</span><div><b>設計系統必須進到程式碼</b><p>只做 mockup 不夠；把色彩、字級、間距與元件變成 CSS 與 template，才不會每頁都走鐘。</p></div></div>
+          <div class="learn"><span class="n">3</span><div><b>部署是最後一哩路，也是驗收的一部分</b><p>Neon 連線、環境變數、collectstatic、health check 與測試帳號，少一個都無法 demo。</p></div></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:15px 17px;">
+        <h3 style="font-size:12px;font-weight:900;">限制與下一步</h3>
+        <div class="mt8" style="display:grid;gap:6px;">
+          <div style="font-size:8.8px;color:#3D5266;line-height:1.55;"><b>限制：</b>氣象資料為模擬資料，不是即時 NWS API；影響範圍圖為示意；目前以美國 12 個城市為主。</div>
+          <div style="font-size:8.8px;color:#3D5266;line-height:1.55;"><b>下一步：</b>接 NWS / OpenWeather API、加入真正的通知寄送、PWA 離線快取、更多城市與無障礙稽核。</div>
+          <div style="font-size:8.8px;color:#3D5266;line-height:1.55;"><b>可維護性：</b>seed_demo 可重建資料；管理員可透過後台新增城市與警報，不需改程式。</div>
+        </div>
+        <div class="mt10" style="display:flex;gap:6px;flex-wrap:wrap;"><span class="pill">Real API</span><span class="pill">Notifications</span><span class="pill">PWA</span><span class="pill">A11y audit</span></div>
+      </div>
+    </div>
+
+    <div class="quote-band mt16">
+      <span class="q">“</span>
+      <div><b>好的介面不是把資料變少，而是把決定變簡單。</b><br><span>Skyline Weather 從 8 個問題出發，最後留下 5 個能回答問題的頁面。</span></div>
+      <div style="margin-left:auto;text-align:right;"><b style="font-size:10px;">{{GROUP}}</b><br><span>{{DATE}}</span></div>
+    </div>
+    <div class="mt10 center" style="font-size:9px;color:#6B7F94;">— 謝謝老師與助教 —　Skyline Weather · 2026 使用者介面設計期中專題</div>
+    <div class="pg"><b>17</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+<!-- ============================ 18 APPENDIX ============================ -->
+<section class="slide">
+  <div class="pad">
+    <div class="s-head">
+      <div>
+        <div class="s-kicker">16 · Delivery &amp; appendix</div>
+        <h2 class="s-title">交付資訊</h2>
+        <p class="s-sub">前後台連結、測試帳號、組員分工、AI 對話截圖索引與檔案位置。</p>
+      </div>
+      <div class="s-side"><b>2026.11.01</b><br>23:59 TronClass</div>
+    </div>
+
+    <div class="deliver-grid">
+      <div>
+        <div class="deliver-card">
+          <h3>連結與帳號</h3>
+          <div class="deliver-row"><span>前台</span><b>{{FRONTEND_URL}}</b></div>
+          <div class="deliver-row"><span>後台</span><b>{{ADMIN_URL}}</b></div>
+          <div class="deliver-row"><span>GitHub</span><b>{{REPO_URL}}</b></div>
+          <div class="deliver-row"><span>會員測試</span><b>demo / Demo1234!</b></div>
+          <div class="deliver-row"><span>管理員</span><b>admin / Admin1234!</b></div>
+          <div class="deliver-row"><span>組別</span><b>{{GROUP}}</b></div>
+          <div class="deliver-row"><span>組員</span><b>{{MEMBERS}}</b></div>
+        </div>
+        <div class="qr-note mt12">
+          <b>Demo 建議流程：</b>開啟前台 → 以 demo 登入 → 首頁切換預設城市 → 城市總覽查 Seattle → 收藏 → 警報中心看 Severe → 後台修改一則警報 → 回到前台確認同步。
+        </div>
+      </div>
+
+      <div>
+        <div class="deliver-card">
+          <h3>AI 對話截圖索引（10 組）</h3>
+          <div class="shot-index mt8">
+            <div><b>01</b> 任務範圍與報告架構</div><div><b>06</b> 三條 User Flow</div>
+            <div><b>02</b> 原網站 6 張截圖</div><div><b>07</b> Design System + 9 分鏡</div>
+            <div><b>03</b> 連結／字級／Lighthouse</div><div><b>08</b> 前期報告 PDF</div>
+            <div><b>04</b> 8 項 Bad UI 問題</div><div><b>09</b> 期中規範</div>
+            <div><b>05</b> Persona / Story / Scenario</div><div><b>10</b> 全端實作</div>
+          </div>
+          <div class="small muted" style="margin-top:8px;line-height:1.6;">截圖需包含實際 Prompt 與 AI 回覆，不可只貼整理後文字；前期 1–8 於 2026-10-18 對話，本期 9–10 於 2026-10-31 對話。</div>
+        </div>
+
+        <div class="deliver-card mt12">
+          <h3>檔案位置</h3>
+          <div class="deliver-row"><span>程式</span><b>Django project（forecast app）</b></div>
+          <div class="deliver-row"><span>資料</span><b>seed_demo.py · 12 cities / 8 alerts</b></div>
+          <div class="deliver-row"><span>截圖</span><b>docs/screenshots/ 01–18</b></div>
+          <div class="deliver-row"><span>Prompt</span><b>docs/AI_PROMPTS.md</b></div>
+          <div class="deliver-row"><span>部署</span><b>docs/DEPLOY.md · render.yaml</b></div>
+          <div class="deliver-row"><span>報告</span><b>本 PDF · 另附 PPTX</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt12" style="padding:10px 14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;"><b style="font-size:9px;letter-spacing:.08em;color:#0B3B6A;">驗收流程 · 5 分鐘</b><span class="pill g">demo ready</span></div>
+      <div class="pipeline">
+        <div class="pipe-step"><b>1 · 前台</b><span>開啟首頁與城市總覽</span></div>
+        <div class="pipe-step"><b>2 · 查詢</b><span>搜尋 Seattle / 溫度區間</span></div>
+        <div class="pipe-step"><b>3 · 登入</b><span>demo 收藏與偏好</span></div>
+        <div class="pipe-step"><b>4 · 警報</b><span>Severe 詳情與行動</span></div>
+        <div class="pipe-step"><b>5 · 後台</b><span>修改資料 → 前台同步</span></div>
+      </div>
+    </div>
+    <div class="mt8 center" style="font-size:8.2px;color:#93A6BA;">資料為課堂展示用模擬資料，依 NWS 公開欄位結構整理；非美國國家氣象局官方網站。</div>
+    <div class="pg"><b>18</b> / 18</div><div class="foot-brand"><strong>Skyline Weather</strong> · Midterm Report</div>
+  </div>
+</section>
+
+</body>
+</html>

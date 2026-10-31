@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load weather_extras %}
+{% block title %}登入｜Skyline Weather{% endblock %}
+{% block meta_description %}登入 Skyline Weather，管理收藏城市、預設地點與天氣警報通知。{% endblock %}
+
+{% block content %}
+<div class="wrap">
+  <div class="auth-page">
+    {% include "auth/_visual.html" %}
+
+    <div class="auth-form-wrap">
+      <span class="eyebrow">{% ui_icon "lock" 14 %} Member Login</span>
+      <h1>歡迎回來</h1>
+      <p>登入後繼續使用你的收藏與個人化設定。</p>
+
+      <form class="auth-form" method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+        {% if form.non_field_errors %}
+          <div class="flash flash-error" style="padding:10px 12px;box-shadow:none;">
+            <span>{% ui_icon "alert" 17 %}</span>
+            <p>{{ form.non_field_errors.0 }}</p>
+          </div>
+        {% endif %}
+
+        <div class="field">
+          <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+          {{ form.username }}
+          {% for error in form.username.errors %}<div class="form-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+          <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+          {{ form.password }}
+          {% for error in form.password.errors %}<div class="form-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit">{% ui_icon "arrow-right" 17 %} 登入</button>
+      </form>
+
+      <p class="auth-alt">還沒有帳號？<a href="{% url 'register' %}">建立會員帳號</a></p>
+
+      <div class="demo-box">
+        <b>{% ui_icon "info" 14 %} 專題展示帳號</b><br>
+        會員：<code>demo</code> / <code>Demo1234!</code><br>
+        管理員：<code>admin</code> / <code>Admin1234!</code>（可進入 Django 後台）
+      </div>
+      <p class="auth-note">此為課堂專題原型，請勿輸入真實密碼。部署後請記得更改展示帳號密碼。</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

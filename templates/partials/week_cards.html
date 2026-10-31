@@ -1,0 +1,12 @@
+{% load weather_extras %}{% for day in week %}
+  <a class="day-cell {% if day.is_weekend %}is-weekend{% endif %}" href="{{ location.get_absolute_url }}#week" aria-label="{{ day.date|date_short }} {{ day.get_condition_display }}">
+    {% if day.is_weekend %}<span class="wk">週末</span>{% endif %}
+    <div class="d">{{ day.date|day_label }}</div>
+    <div class="date">{{ day.date|date_short }}</div>
+    {% weather_icon day.condition 36 %}
+    <div><span class="hi">{{ day.high_f|temp:unit }}</span> <span class="lo">{{ day.low_f|temp:unit }}</span></div>
+    <div class="bar"><i style="height: {{ day.precip_percent }}%"></i></div>
+    <div class="rain">{{ day.precip_percent }}%</div>
+    <div class="wind">{{ day.wind }}</div>
+  </a>
+{% endfor %}

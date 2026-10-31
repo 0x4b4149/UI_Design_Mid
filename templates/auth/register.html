@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load weather_extras %}
+{% block title %}註冊會員｜Skyline Weather{% endblock %}
+{% block meta_description %}建立 Skyline Weather 會員帳號，收藏城市並設定個人化天氣通知。{% endblock %}
+
+{% block content %}
+<div class="wrap">
+  <div class="auth-page">
+    {% include "auth/_visual.html" %}
+
+    <div class="auth-form-wrap">
+      <span class="eyebrow">{% ui_icon "user" 14 %} Create Account</span>
+      <h1>建立會員帳號</h1>
+      <p>只要一分鐘，就能把常用城市與通知偏好存下來。</p>
+
+      <form class="auth-form" method="post" action="{% url 'register' %}">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="flash flash-error" style="padding:10px 12px;box-shadow:none;">
+            <span>{% ui_icon "alert" 17 %}</span>
+            <p>{{ form.non_field_errors.0 }}</p>
+          </div>
+        {% endif %}
+
+        <div class="field">
+          <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+          {{ form.username }}
+          {% for error in form.username.errors %}<div class="form-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+          <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+          {{ form.email }}
+          {% for error in form.email.errors %}<div class="form-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+          <label for="{{ form.display_name.id_for_label }}">{{ form.display_name.label }} <span class="muted" style="font-weight:400;">（選填）</span></label>
+          {{ form.display_name }}
+          {% for error in form.display_name.errors %}<div class="form-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+          <label for="{{ form.password1.id_for_label }}">{{ form.password1.label }}</label>
+          {{ form.password1 }}
+          {% for error in form.password1.errors %}<div class="form-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+          <label for="{{ form.password2.id_for_label }}">{{ form.password2.label }}</label>
+          {{ form.password2 }}
+          {% for error in form.password2.errors %}<div class="form-errors">{{ error }}</div>{% endfor %}
+        </div>
+
+        <button class="btn btn-primary btn-block" type="submit">{% ui_icon "user" 17 %} 建立帳號</button>
+      </form>
+
+      <p class="auth-alt">已經有帳號？<a href="{% url 'login' %}">回到登入</a></p>
+      <p class="auth-note">密碼至少 8 個字元，不能與帳號太相似，也不能是常見密碼。</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

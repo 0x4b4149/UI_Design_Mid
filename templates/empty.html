@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load weather_extras %}
+{% block title %}尚未建立資料｜Skyline Weather{% endblock %}
+{% block content %}
+<div class="wrap page">
+  <div class="card empty-card" style="max-width:640px;margin:40px auto;">
+    <span class="muted">{% ui_icon "database" 40 %}</span>
+    <h3>網站還沒有城市資料</h3>
+    <p>請先在終端機執行 <code>python manage.py seed_demo</code> 匯入展示資料，再重新整理頁面。</p>
+    <a class="btn btn-primary btn-sm mt-2" href="{% url 'admin:index' %}">前往 Django 管理後台</a>
+  </div>
+</div>
+{% endblock %}

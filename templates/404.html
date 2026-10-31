@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load weather_extras %}
+{% block title %}找不到頁面｜Skyline Weather{% endblock %}
+{% block content %}
+<div class="wrap page">
+  <div class="card empty-card" style="max-width:640px;margin:40px auto;">
+    <span class="muted">{% ui_icon "compass" 42 %}</span>
+    <h3>404 · 這條路徑沒有天氣資料</h3>
+    <p>頁面可能已移動，或網址有誤。回到首頁，或用上方搜尋找到你要的城市。</p>
+    <div class="mt-2" style="display:flex;gap:9px;justify-content:center;flex-wrap:wrap;">
+      <a class="btn btn-primary btn-sm" href="{% url 'home' %}">回到首頁</a>
+      <a class="btn btn-ghost btn-sm" href="{% url 'locations' %}">城市總覽</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

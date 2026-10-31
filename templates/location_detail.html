@@ -1,0 +1,183 @@
+﻿{% extends "base.html" %}
+{% load weather_extras %}
+{% block title %}{{ location.full_name }} · 完整預報｜Skyline Weather{% endblock %}
+{% block meta_description %}{{ location.full_name }} 的即時觀測、24 小時逐時預報、7 日預報、空氣品質與天氣警報。{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="location-head">
+    <div>
+      <span class="eyebrow">{% ui_icon "pin" 14 %} {{ location.county }} · {{ location.station_code|default:"NWS" }}</span>
+      <div class="location-title">
+        <h1>{{ location.name }}, {{ location.state }}</h1>
+        {% if alerts %}<span class="pill pill-red">{% ui_icon "alert" 13 %} {{ alerts|length }} 則生效警報</span>{% else %}<span class="pill pill-green">{% ui_icon "check" 13 %} 目前無警報</span>{% endif %}
+      </div>
+      <div class="location-meta">
+        <span>更新 {{ current.observed_at|in_tz:location.timezone|time_short }}</span><span class="dot"></span>
+        <span>{{ location.latitude|absval|floatformat:4 }}°N, {{ location.longitude|absval|floatformat:4 }}°W</span>
+        <span>·</span>
+        <span>海拔 {{ location.elevation_ft }} ft</span>
+      </div>
+    </div>
+    <div class="location-actions">
+      {% include "partials/favorite_button.html" %}
+      <a class="btn btn-ghost btn-sm" href="{% url 'locations' %}">{% ui_icon "arrow-left" 15 %} 城市總覽</a>
+    </div>
+  </div>
+
+  {% if alerts %}
+    {% with alert=alerts.0 %}
+      <div class="alert-strip {% if alert.severity == 'severe' %}sev{% endif %}">
+        <span class="alert-ic">{% ui_icon "alert" 18 %}</span>
+        <div><strong>{{ alert.title }}</strong> · {{ alert.areas }} · {{ alert.duration_label }}</div>
+        <a href="{{ alert.get_absolute_url }}">查看詳情 {% ui_icon "arrow-right" 14 %}</a>
+      </div>
+    {% endwith %}
+  {% endif %}
+
+  {% if current %}
+    <div class="detail-grid">
+      <article class="card current-card">
+        <div class="card-head">
+          <h2>{% ui_icon "sun" 16 %} 現在的天氣</h2>
+          <span class="meta">{{ current.observed_at|in_tz:location.timezone|time_short }} 觀測</span>
+        </div>
+        <div class="now-main">
+          <div class="now-icon">{% weather_icon current.condition 104 %}</div>
+          <div>
+            <div class="now-temp">
+              <span class="value">{{ current.temp_f|temp:unit }}</span>
+              <span class="unit">{% if unit == "c" %}C{% else %}F{% endif %}</span>
+            </div>
+            <div class="now-condition">{{ current.get_condition_display }}</div>
+            <p class="now-sub">
+              體感 {{ current.feels_like_f|temp:unit }} · 今日 <span class="text-hot">{{ current.high_f|temp:unit }}</span> / <span class="text-cold">{{ current.low_f|temp:unit }}</span><br>
+              {{ current.summary }}
+            </p>
+          </div>
+        </div>
+        <div class="now-foot">
+          <span class="pill pill-neutral">{% ui_icon "droplet" 13 %} 濕度 {{ current.humidity }}%</span>
+          <span class="pill pill-neutral">{% ui_icon "wind" 13 %} {{ current.wind_direction }} {{ current.wind_mph }} mph</span>
+          <span class="pill pill-neutral">{% ui_icon "gauge" 13 %} 氣壓 {{ current.pressure_in }} inHg</span>
+          <span class="pill {% if current.aqi <= 100 %}pill-green{% else %}pill-amber{% endif %}">{% ui_icon "air" 13 %} AQI {{ current.aqi }} {{ current.aqi_level }}</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-cell"><div class="k">{% ui_icon "thermometer" 13 %} 體感</div><div class="v">{{ current.feels_like_f|temp:unit }}</div></div>
+          <div class="stat-cell"><div class="k">{% ui_icon "eye" 13 %} 能見度</div><div class="v">{{ current.visibility_mi }} <small>mi</small></div></div>
+          <div class="stat-cell"><div class="k">{% ui_icon "sun" 13 %} 紫外線</div><div class="v">{{ current.uv_index }} <small>{{ current.uv_level }}</small></div></div>
+          <div class="stat-cell"><div class="k">{% ui_icon "droplet" 13 %} 露點</div><div class="v">{{ current.dew_point_f|temp:unit }}</div></div>
+          <div class="stat-cell"><div class="k">{% ui_icon "wind" 13 %} 陣風</div><div class="v">{{ current.gust_mph }} <small>mph</small></div></div>
+          <div class="stat-cell"><div class="k">{% ui_icon "compass" 13 %} 風向</div><div class="v">{{ current.wind_direction }}</div></div>
+        </div>
+      </article>
+
+      <div class="stack-md">
+        <section class="card">
+          <div class="card-head">
+            <h2>{% ui_icon "sparkles" 16 %} 今天怎麼安排</h2>
+            <span class="meta">可行動建議</span>
+          </div>
+          <div class="insight-list">
+            {% for item in insights %}
+              <div class="insight">
+                <span class="insight-ic tone-{{ item.tone }}">{% ui_icon item.icon 18 %}</span>
+                <div><strong>{{ item.title }}</strong><p>{{ item.body }}</p></div>
+              </div>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="card card-flat">
+          <div class="card-head"><h2>{% ui_icon "info" 16 %} 觀測資訊</h2></div>
+          <div class="stack-sm small muted">
+            <div class="row-between"><span>測站</span><strong style="color:var(--ink);">NWS {{ location.station_code|default:"—" }}</strong></div>
+            <div class="row-between"><span>時區</span><strong style="color:var(--ink);">{{ location.timezone }}</strong></div>
+            <div class="row-between"><span>座標</span><strong style="color:var(--ink);">{{ location.latitude|absval|floatformat:4 }}, {{ location.longitude|absval|floatformat:4 }}</strong></div>
+            <div class="row-between"><span>資料更新</span><strong style="color:var(--ink);">{{ current.observed_at|in_tz:location.timezone|time_short }}</strong></div>
+          </div>
+          <p class="small muted mt-2">此為課堂專題的模擬資料，欄位結構參考 NWS 公開觀測與預報內容。</p>
+        </section>
+      </div>
+    </div>
+  {% endif %}
+
+  <section class="section" id="hourly">
+    <div class="section-head">
+      <div>
+        <h2>{% ui_icon "clock" 19 %} 24 小時逐時預報</h2>
+        <p>溫度、天氣圖示、降雨機率與風速一起看，避免只憑單一數字做判斷。</p>
+      </div>
+      <span class="pill pill-blue">{% ui_icon "clock" 13 %} 每小時更新</span>
+    </div>
+    <div class="card">
+      <div class="hourly-scroll">
+        {% for hour in hourly %}
+          <div class="hour-cell {% if forloop.first %}is-now{% endif %}">
+            <div class="h">{% if forloop.first %}現在{% else %}{{ hour.time|in_tz:location.timezone|hour_label }}{% endif %}</div>
+            {% weather_icon hour.condition 34 %}
+            <div class="d">{{ hour.temp_f|temp:unit }}</div>
+            <div class="p">{{ hour.precip_percent }}%</div>
+            <div class="w">{{ hour.wind_mph }} mph</div>
+          </div>
+        {% empty %}
+          <div class="empty-mini">尚無逐時預報資料。</div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="week">
+    <div class="section-head">
+      <div>
+        <h2>{% ui_icon "calendar" 19 %} 7 日預報</h2>
+        <p>週末以藍色外框標記；長條圖代表降雨機率，數值直接標在下方。</p>
+      </div>
+      <a class="section-link" href="{% url 'alerts' %}">查看天氣警報 {% ui_icon "arrow-right" 13 %}</a>
+    </div>
+    <div class="card">
+      <div class="week-grid">
+        {% include "partials/week_cards.html" %}
+      </div>
+    </div>
+  </section>
+
+  <div class="two-col section">
+    <section class="card">
+      <div class="card-head">
+        <h2>{% ui_icon "bell" 16 %} 此城市的生效警報</h2>
+        <span class="meta">{{ alerts|length }} 則</span>
+      </div>
+      <div class="alert-mini-list">
+        {% include "partials/alert_mini_list.html" with alerts=alerts %}
+      </div>
+      <div class="mt-2">
+        <a class="btn btn-soft btn-sm btn-block" href="{% url 'alerts' %}?q={{ location.name|urlencode }}">
+          {% ui_icon "search" 15 %} 在警報中心查看更多
+        </a>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>{% ui_icon "map" 16 %} 鄰近城市</h2>
+        <a class="section-link" href="{% url 'locations' %}?region={{ location.region }}">同區域 {% ui_icon "arrow-right" 13 %}</a>
+      </div>
+      <div class="region-list">
+        {% for city in nearby %}
+          <a class="region-row" href="{{ city.get_absolute_url }}">
+            {% if city.current %}{% weather_icon city.current.condition 34 %}{% endif %}
+            <div>
+              <div class="name">{{ city.name }}, {{ city.state }}</div>
+              <div class="meta">{{ city.current.get_condition_display|default:"尚無觀測" }}</div>
+            </div>
+            <span class="temp">{% if city.current %}{{ city.current.temp_f|temp:unit }}{% else %}—{% endif %}</span>
+          </a>
+        {% empty %}
+          <div class="empty-mini">同區域沒有其他城市。</div>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

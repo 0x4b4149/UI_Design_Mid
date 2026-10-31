@@ -1,0 +1,15 @@
+{% load weather_extras %}{% if user.is_authenticated %}
+  <form method="post" action="{% url 'toggle_favorite' location.slug %}" class="favorite-form">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button type="submit" class="btn-heart {% if location.pk in favorite_ids %}is-saved{% endif %}"
+            aria-label="{% if location.pk in favorite_ids %}取消收藏 {{ location.full_name }}{% else %}收藏 {{ location.full_name }}{% endif %}">
+      {% ui_icon "heart" 16 %}
+      <span class="label">{% if location.pk in favorite_ids %}已收藏{% else %}收藏{% endif %}</span>
+    </button>
+  </form>
+{% else %}
+  <a class="btn-heart" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}" aria-label="登入後收藏 {{ location.full_name }}">
+    {% ui_icon "heart" 16 %}<span class="label">登入收藏</span>
+  </a>
+{% endif %}

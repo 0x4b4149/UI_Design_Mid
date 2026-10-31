@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load weather_extras %}
+{% block title %}{{ alert.title }}｜警報中心｜Skyline Weather{% endblock %}
+{% block meta_description %}{{ alert.title }}：{{ alert.description|truncatechars:120 }}{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <div class="mb-2">
+    <a class="link-arrow small" href="{% url 'alerts' %}">{% ui_icon "arrow-left" 14 %} 回到警報中心</a>
+  </div>
+
+  <div class="alert-detail-strip {{ alert.severity|severity_class }}">
+    <span class="alert-detail-ic">{% ui_icon alert.alert_type|alert_icon 28 %}</span>
+    <div style="flex:1;min-width:240px;">
+      <div class="alert-detail-meta" style="margin-top:0;margin-bottom:6px;">
+        <span class="pill {% if alert.severity == 'severe' %}pill-red{% elif alert.severity == 'moderate' %}pill-amber{% else %}pill-blue{% endif %}">
+          {{ alert.severity|severity_zh }} · {{ alert.get_severity_display }}
+        </span>
+        <span class="pill pill-neutral">{{ alert.get_alert_type_display }}</span>
+        <span class="pill pill-neutral">{{ alert.get_urgency_display }}</span>
+      </div>
+      <h1>{{ alert.title }}</h1>
+      <div class="alert-detail-meta">
+        {% ui_icon "pin" 13 %} {{ alert.location.full_name }} · {{ alert.areas }}
+        <span>·</span>
+        {% ui_icon "clock" 13 %} {{ alert.duration_label }}
+      </div>
+    </div>
+    <div class="alert-detail-actions">
+      {% include "partials/favorite_button.html" with location=alert.location %}
+      <a class="btn btn-ghost btn-sm" href="{% url 'alerts' %}">全部警報</a>
+    </div>
+  </div>
+
+  <div class="alert-layout">
+    <div class="stack-md">
+      <section class="card">
+        <div class="card-head"><h2>{% ui_icon "info" 16 %} 警報說明</h2><span class="meta">{{ alert.source }}</span></div>
+        <div class="alert-copy">{{ alert.description }}</div>
+      </section>
+
+      {% if alert.instruction_list %}
+        <section class="card">
+          <div class="card-head"><h2>{% ui_icon "shield" 16 %} 建議行動</h2><span class="meta">依 NWS 指引整理</span></div>
+          <div class="action-list">
+            {% for action in alert.instruction_list %}
+              <div class="action-item"><span class="action-num">{{ forloop.counter }}</span><span>{{ action }}</span></div>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      <section class="card">
+        <div class="card-head"><h2>{% ui_icon "clock" 16 %} 時間軸</h2></div>
+        <div class="timeline">
+          <div class="timeline-item"><strong>{{ alert.issued_at|date:"m/d H:i" }}</strong>　警報發布</div>
+          <div class="timeline-item"><strong>{{ alert.starts_at|date:"m/d H:i" }}</strong>　警報生效</div>
+          <div class="timeline-item"><strong>{{ alert.ends_at|date:"m/d H:i" }}</strong>　預計結束</div>
+        </div>
+      </section>
+
+      {% if related %}
+        <section class="card">
+          <div class="card-head"><h2>{% ui_icon "bell" 16 %} 同區域其他警報</h2></div>
+          <div class="alert-mini-list">
+            {% for item in related %}
+              <a class="alert-mini {{ item.severity|severity_class }}" href="{{ item.get_absolute_url }}">
+                <span class="ic">{% ui_icon item.alert_type|alert_icon 16 %}</span>
+                <div><strong>{{ item.title }}</strong><small>{{ item.areas }} · {{ item.duration_label }}</small></div>
+              </a>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+    <aside class="stack-md">
+      <section class="card">
+        <div class="card-head"><h2>{% ui_icon "map" 16 %} 影響範圍</h2><span class="meta">示意</span></div>
+        <div class="affected-map" role="img" aria-label="{{ alert.areas }} 影響範圍示意圖">
+          <div class="affected-blob" style="left:18%;top:18%;width:58%;height:54%;"></div>
+          <div class="affected-blob" style="left:46%;top:42%;width:34%;height:30%;background:radial-gradient(closest-side,rgba(245,158,11,.32),rgba(245,158,11,.04));border-color:rgba(245,158,11,.55);"></div>
+          {% for city in affected|slice:":3" %}
+            <span class="affected-label" style="left:{{ forloop.counter0|add:'20' }}%;top:{{ forloop.counter0|add:'30' }}%;">{{ city.name }}</span>
+          {% endfor %}
+          <span class="map-caption">影響範圍示意 · 非精確地理邊界</span>
+        </div>
+        <div class="mt-2" style="display:flex;gap:6px;flex-wrap:wrap;">
+          {% for city in affected %}
+            <a class="pill pill-blue" href="{{ city.get_absolute_url }}">{{ city.name }}</a>
+          {% endfor %}
+        </div>
+        <p class="small muted mt-2">實際影響範圍以 NWS / CAP 發布內容為準；本專題以城市層級示意。</p>
+      </section>
+
+      <section class="card card-flat">
+        <div class="card-head"><h2>{% ui_icon "database" 16 %} 警報資訊</h2></div>
+        <div class="stack-sm small">
+          <div class="row-between"><span class="muted">嚴重程度</span><strong>{{ alert.severity|severity_zh }}（{{ alert.get_severity_display }}）</strong></div>
+          <div class="row-between"><span class="muted">緊急程度</span><strong>{{ alert.get_urgency_display }}</strong></div>
+          <div class="row-between"><span class="muted">發布時間</span><strong>{{ alert.issued_at|date:"Y/m/d H:i" }}</strong></div>
+          <div class="row-between"><span class="muted">生效時間</span><strong>{{ alert.starts_at|date:"m/d H:i" }}</strong></div>
+          <div class="row-between"><span class="muted">結束時間</span><strong>{{ alert.ends_at|date:"m/d H:i" }}</strong></div>
+          <div class="row-between"><span class="muted">資料來源</span><strong>{{ alert.source }}</strong></div>
+        </div>
+      </section>
+
+      <section class="card" style="background:linear-gradient(140deg,#F0F7FF,#FAFDFF);border-color:#C7DDF8;">
+        <div class="card-head"><h2>{% ui_icon "bell" 16 %} 接收後續更新</h2></div>
+        <p class="small" style="color:var(--ink-2);line-height:1.8;">把 {{ alert.location.name }} 加入收藏，並設定通知門檻，下次不用自己回來找。</p>
+        <a class="btn btn-primary btn-sm btn-block mt-2" href="{% url 'dashboard' %}#preferences">{% ui_icon "settings" 15 %} 管理通知</a>
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

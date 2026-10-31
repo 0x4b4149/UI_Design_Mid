@@ -1,0 +1,11 @@
+{% load weather_extras %}{% for alert in alerts %}
+  <a class="alert-mini {{ alert.severity|severity_class }}" href="{{ alert.get_absolute_url }}">
+    <span class="ic">{% ui_icon alert.alert_type|alert_icon 16 %}</span>
+    <div>
+      <strong>{{ alert.title }}</strong>
+      <small>{{ alert.areas }} · {{ alert.duration_label }}</small>
+    </div>
+  </a>
+{% empty %}
+  <div class="empty-mini">目前沒有生效中的警報。</div>
+{% endfor %}

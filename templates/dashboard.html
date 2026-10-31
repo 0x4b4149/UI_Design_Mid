@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% load weather_extras %}
+{% block title %}會員中心 · {{ profile.name|default:user.username }}｜Skyline Weather{% endblock %}
+{% block meta_description %}管理收藏城市、預設地點、溫度單位與天氣警報通知偏好。{% endblock %}
+
+{% block content %}
+<div class="wrap page">
+  <section class="dash-hero">
+    <div>
+      <span class="eyebrow" style="color:#8ED8F5;">{% ui_icon "user" 14 %} 會員中心 · My Skyline</span>
+      <h1>{{ profile.name|default:user.username }}，今天想先看哪裡？</h1>
+      <p>這裡集中管理你的收藏、查詢紀錄與通知設定。首頁會依預設城市與溫度單位顯示。</p>
+    </div>
+    <span class="hero-ic">{% ui_icon "sun" 34 %}</span>
+  </section>
+
+  <div class="dash-stats">
+    <div class="dash-stat">
+      <span class="ic">{% ui_icon "heart" 18 %}</span>
+      <div><div class="n">{{ favorites|length }}</div><div class="l">收藏城市</div></div>
+    </div>
+    <div class="dash-stat">
+      <span class="ic" style="background:var(--sev-bg);color:#B3251A;">{% ui_icon "bell" 18 %}</span>
+      <div><div class="n">{{ alert_count }}</div><div class="l">收藏城市的生效警報</div></div>
+    </div>
+    <div class="dash-stat">
+      <span class="ic" style="background:var(--purple-bg);color:var(--purple);">{% ui_icon "search" 18 %}</span>
+      <div><div class="n">{{ recent|length }}</div><div class="l">最近的查詢</div></div>
+    </div>
+  </div>
+
+  <div class="dash-layout">
+    <div>
+      <section class="card dash-section" id="favorites">
+        <div class="card-head">
+          <h2>{% ui_icon "heart" 16 %} 我的收藏</h2>
+          <a class="section-link" href="{% url 'locations' %}">新增城市 {% ui_icon "plus" 13 %}</a>
+        </div>
+        {% if favorites %}
+          <div class="fav-grid">
+            {% for favorite in favorites %}
+              {% with city=favorite.location %}
+                <div class="fav-card">
+                  <a href="{{ city.get_absolute_url }}" style="display:flex;align-items:center;gap:11px;flex:1;min-width:0;color:inherit;">
+                    {% if city.current %}{% weather_icon city.current.condition 36 %}{% endif %}
+                    <div style="min-width:0;">
+                      <div class="name">{{ city.name }}, {{ city.state }}</div>
+                      <div class="meta">{{ city.current.get_condition_display|default:"尚無觀測" }}</div>
+                    </div>
+                    <span class="temp">{% if city.current %}{{ city.current.temp_f|temp:unit }}{% else %}—{% endif %}</span>
+                  </a>
+                  <form method="post" action="{% url 'toggle_favorite' city.slug %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'dashboard' %}#favorites">
+                    <button type="submit" class="fav-remove" aria-label="移除 {{ city.full_name }} 收藏" data-confirm="要從收藏移除 {{ city.full_name }} 嗎？">
+                      {% ui_icon "trash" 15 %}
+                    </button>
+                  </form>
+                </div>
+              {% endwith %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-card" style="padding:26px 18px;">
+            <span class="muted">{% ui_icon "heart" 32 %}</span>
+            <h3>還沒有收藏城市</h3>
+            <p>把常看的城市加入收藏，首頁與警報摘要會優先顯示。</p>
+            <a class="btn btn-primary btn-sm mt-2" href="{% url 'locations' %}">瀏覽城市總覽</a>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="card dash-section">
+        <div class="card-head">
+          <h2>{% ui_icon "bell" 16 %} 收藏城市的警報</h2>
+          <a class="section-link" href="{% url 'alerts' %}">全部警報 {% ui_icon "arrow-right" 13 %}</a>
+        </div>
+        <div class="alert-mini-list">
+          {% include "partials/alert_mini_list.html" with alerts=my_alerts %}
+        </div>
+      </section>
+
+      <section class="card dash-section">
+        <div class="card-head">
+          <h2>{% ui_icon "search" 16 %} 最近查詢</h2>
+          <span class="meta">登入後自動保留</span>
+        </div>
+        {% if recent %}
+          <div class="recent-list">
+            {% for entry in recent %}
+              <a class="recent-chip" href="{% url 'locations' %}?q={{ entry.query|urlencode }}">
+                {% ui_icon "search" 13 %} {{ entry.query }}
+                <span class="muted" style="font-weight:400;">{{ entry.results_count }} 筆</span>
+              </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-mini">還沒有查詢紀錄。試著在城市總覽搜尋一個城市。</div>
+        {% endif %}
+      </section>
+
+      {% if recommended %}
+        <section class="card dash-section">
+          <div class="card-head">
+            <h2>{% ui_icon "sparkles" 16 %} 也許你會想看</h2>
+            <a class="section-link" href="{% url 'locations' %}">更多城市 {% ui_icon "arrow-right" 13 %}</a>
+          </div>
+          <div class="region-list">
+            {% for city in recommended %}
+              <a class="region-row" href="{{ city.get_absolute_url }}">
+                {% if city.current %}{% weather_icon city.current.condition 34 %}{% endif %}
+                <div>
+                  <div class="name">{{ city.name }}, {{ city.state }}</div>
+                  <div class="meta">{{ city.current.get_condition_display|default:"尚無觀測" }}</div>
+                </div>
+                <span class="temp">{% if city.current %}{{ city.current.temp_f|temp:unit }}{% else %}—{% endif %}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+    </div>
+
+    <aside class="stack-md">
+      <section class="card" id="preferences">
+        <div class="card-head">
+          <h2>{% ui_icon "settings" 16 %} 偏好設定</h2>
+          <span class="meta">@{{ user.username }}</span>
+        </div>
+        <form class="preference-form" method="post" action="{% url 'dashboard' %}#preferences">
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="form-row">
+            <label for="{{ form.display_name.id_for_label }}">{{ form.display_name.label }}</label>
+            {{ form.display_name }}
+            {% if form.display_name.errors %}<div class="form-errors">{{ form.display_name.errors }}</div>{% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.home_location.id_for_label }}">{{ form.home_location.label }}</label>
+            {{ form.home_location }}
+            <span class="small muted">首頁會優先顯示這個城市。</span>
+            {% if form.home_location.errors %}<div class="form-errors">{{ form.home_location.errors }}</div>{% endif %}
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.unit.id_for_label }}">{{ form.unit.label }}</label>
+            {{ form.unit }}
+            {% if form.unit.errors %}<div class="form-errors">{{ form.unit.errors }}</div>{% endif %}
+          </div>
+
+          <div class="divider"></div>
+          <span class="field-label">通知管道</span>
+
+          <div class="switch-row">
+            <div class="copy"><strong>App 推播</strong><small>接收收藏城市的即時警報</small></div>
+            <label class="switch">{{ form.notify_app }}<i></i></label>
+          </div>
+          <div class="switch-row">
+            <div class="copy"><strong>Email 通知</strong><small>{{ user.email|default:"尚未設定 Email" }}</small></div>
+            <label class="switch">{{ form.notify_email }}<i></i></label>
+          </div>
+          <div class="switch-row">
+            <div class="copy"><strong>簡訊通知</strong><small>僅用於嚴重警報</small></div>
+            <label class="switch">{{ form.notify_sms }}<i></i></label>
+          </div>
+
+          <div class="form-row">
+            <label for="{{ form.min_severity.id_for_label }}">{{ form.min_severity.label }}</label>
+            {{ form.min_severity }}
+            <span class="small muted">低於門檻的警報不會主動通知。</span>
+            {% if form.min_severity.errors %}<div class="form-errors">{{ form.min_severity.errors }}</div>{% endif %}
+          </div>
+
+          <button class="btn btn-primary btn-block" type="submit">{% ui_icon "check" 16 %} 儲存設定</button>
+        </form>
+      </section>
+
+      <section class="card card-flat">
+        <div class="card-head"><h2>{% ui_icon "shield" 16 %} 帳號資訊</h2></div>
+        <div class="stack-sm small">
+          <div class="row-between"><span class="muted">會員帳號</span><strong>@{{ user.username }}</strong></div>
+          <div class="row-between"><span class="muted">Email</span><strong>{{ user.email|default:"—" }}</strong></div>
+          <div class="row-between"><span class="muted">加入時間</span><strong>{{ user.date_joined|date:"Y/m/d" }}</strong></div>
+        </div>
+        {% if user.is_staff %}
+          <a class="btn btn-ghost btn-sm btn-block mt-2" href="{% url 'admin:index' %}">{% ui_icon "settings" 15 %} 開啟 Django 管理後台</a>
+        {% endif %}
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

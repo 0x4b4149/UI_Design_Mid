@@ -1,0 +1,172 @@
+{% load static weather_extras %}<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0F2438">
+  <title>{% block title %}Skyline Weather｜把天氣講清楚{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Skyline Weather 是 weather.gov 的介面改善原型：把即時觀測、逐時預報、7 日預報與天氣警報整理成一個清楚、可行動的天氣資訊站。{% endblock %}">
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  {% include "partials/icons.html" %}
+  <a class="skip-link" href="#main">跳到主要內容</a>
+
+  <header class="site-header">
+    <div class="wrap header-main">
+      <a class="brand" href="{% url 'home' %}" aria-label="Skyline Weather 首頁">
+        <svg class="brand-mark" width="42" height="42" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <rect width="48" height="48" rx="14" fill="#1567D3"/>
+          <circle cx="30" cy="18" r="7" fill="#F6B73C"/>
+          <g stroke="#F6B73C" stroke-width="2.4" stroke-linecap="round">
+            <path d="M30 6v3M30 27v3M18 18h3M39 18h3M21 9l2 2M37 25l2 2M39 9l-2 2M23 25l-2 2"/>
+          </g>
+          <path d="M12 35h22a5.5 5.5 0 0 0 .7-10.9A9 9 0 0 0 17.3 25 5 5 0 0 0 12 35Z" fill="#EAF3FD" stroke="#9DC3EA" stroke-width="1.6"/>
+        </svg>
+        <span class="brand-text">
+          <strong>Skyline</strong>
+          <small>Weather · NWS Redesign</small>
+        </span>
+      </a>
+
+      <form class="global-search" action="{% url 'locations' %}" method="get" role="search"
+            data-search-form data-search-url="{% url 'search_suggestions' %}">
+        <span class="global-search-icon">{% ui_icon "search" 18 %}</span>
+        <label class="sr-only" for="global-search-input">搜尋城市、州或 ZIP</label>
+        <input id="global-search-input" type="search" name="q" placeholder="搜尋城市、州或 ZIP…" autocomplete="off" data-search-input
+               value="{% if request.resolver_match.url_name == 'locations' %}{{ q }}{% endif %}">
+        <kbd class="search-kbd" aria-hidden="true">Ctrl K</kbd>
+        <div class="search-suggest" data-search-suggest hidden></div>
+      </form>
+
+      <div class="header-tools">
+        <div class="unit-toggle" role="group" aria-label="溫度單位切換">
+          <a href="{% url 'set_unit' 'f' %}?next={{ request.get_full_path|urlencode }}" class="{% if unit == 'f' %}is-active{% endif %}" title="華氏">°F</a>
+          <a href="{% url 'set_unit' 'c' %}?next={{ request.get_full_path|urlencode }}" class="{% if unit == 'c' %}is-active{% endif %}" title="攝氏">°C</a>
+        </div>
+
+        {% if user.is_authenticated %}
+          <details class="user-menu">
+            <summary class="avatar-button" aria-label="開啟會員選單">
+              <span class="avatar">{{ profile.name|default:user.username|slice:":1"|upper }}</span>
+              <span class="avatar-name">{{ profile.name|default:user.username }}</span>
+              {% ui_icon "chevron-down" 16 %}
+            </summary>
+            <div class="user-panel">
+              <div class="user-panel-head">
+                <span class="avatar avatar-lg">{{ profile.name|default:user.username|slice:":1"|upper }}</span>
+                <div>
+                  <strong>{{ profile.name|default:user.username }}</strong>
+                  <span>@{{ user.username }}{% if user.is_staff %} · 管理員{% endif %}</span>
+                </div>
+              </div>
+              <a href="{% url 'dashboard' %}">{% ui_icon "user" 18 %} 會員中心</a>
+              <a href="{% url 'dashboard' %}#favorites">{% ui_icon "heart" 18 %} 我的收藏</a>
+              <a href="{% url 'dashboard' %}#preferences">{% ui_icon "settings" 18 %} 偏好設定</a>
+              {% if user.is_staff %}
+                <a href="{% url 'admin:index' %}">{% ui_icon "shield" 18 %} Django 管理後台</a>
+              {% endif %}
+              <form action="{% url 'logout' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="user-logout">{% ui_icon "logout" 18 %} 登出</button>
+              </form>
+            </div>
+          </details>
+        {% else %}
+          <a class="btn btn-ghost btn-sm" href="{% url 'login' %}">登入</a>
+          <a class="btn btn-primary btn-sm" href="{% url 'register' %}">註冊</a>
+        {% endif %}
+
+        <button class="nav-toggle" type="button" aria-label="開啟導覽選單" aria-expanded="false" aria-controls="site-nav" data-nav-toggle>
+          {% ui_icon "menu" 22 %}
+        </button>
+      </div>
+    </div>
+
+    <nav class="site-nav" id="site-nav" aria-label="主要導覽">
+      <div class="wrap nav-inner">
+        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}is-active{% endif %}" href="{% url 'home' %}">
+          {% ui_icon "home" 17 %} 今天
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'locations' or request.resolver_match.url_name == 'location_detail' %}is-active{% endif %}" href="{% url 'locations' %}">
+          {% ui_icon "map" 17 %} 城市總覽
+        </a>
+        <a class="nav-link" href="{% url 'home' %}#week">{% ui_icon "calendar" 17 %} 7 日預報</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'alerts' or request.resolver_match.url_name == 'alert_detail' %}is-active{% endif %}" href="{% url 'alerts' %}">
+          {% ui_icon "bell" 17 %} 警報中心
+          {% if active_alert_count %}<span class="nav-badge">{{ active_alert_count }}</span>{% endif %}
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}is-active{% endif %}" href="{% url 'dashboard' %}">
+          {% ui_icon "user" 17 %} 會員中心
+        </a>
+        <span class="nav-spacer"></span>
+        <span class="nav-note">{% ui_icon "shield" 15 %} weather.gov 介面改善原型</span>
+      </div>
+    </nav>
+  </header>
+
+  {% if messages %}
+    <div class="wrap flash-stack" role="status">
+      {% for message in messages %}
+        <div class="flash flash-{{ message.tags|default:'info' }}">
+          <span>{% if message.tags == 'success' %}{% ui_icon "check" 18 %}{% elif message.tags == 'error' %}{% ui_icon "alert" 18 %}{% else %}{% ui_icon "info" 18 %}{% endif %}</span>
+          <p>{{ message }}</p>
+          <button type="button" class="flash-close" aria-label="關閉通知" data-dismiss>{% ui_icon "x" 16 %}</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-grid">
+      <div class="footer-brand">
+        <a class="brand brand-footer" href="{% url 'home' %}">
+          <svg class="brand-mark" width="36" height="36" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+            <rect width="48" height="48" rx="14" fill="#1567D3"/>
+            <circle cx="30" cy="18" r="7" fill="#F6B73C"/>
+            <path d="M12 35h22a5.5 5.5 0 0 0 .7-10.9A9 9 0 0 0 17.3 25 5 5 0 0 0 12 35Z" fill="#EAF3FD" stroke="#9DC3EA" stroke-width="1.6"/>
+          </svg>
+          <span class="brand-text"><strong>Skyline</strong><small>Weather · NWS Redesign</small></span>
+        </a>
+        <p>把天氣資料整理成「現在就能採取行動」的資訊。這個網站是 weather.gov Bad UI 調查後的介面改善原型。</p>
+        <span class="footer-chip">{% ui_icon "code" 15 %} Django · Neon PostgreSQL · Render</span>
+      </div>
+      <div class="footer-col">
+        <h3>網站</h3>
+        <a href="{% url 'home' %}">今天</a>
+        <a href="{% url 'locations' %}">城市總覽</a>
+        <a href="{% url 'alerts' %}">警報中心</a>
+        <a href="{% url 'dashboard' %}">會員中心</a>
+      </div>
+      <div class="footer-col">
+        <h3>專題</h3>
+        <a href="{% url 'alerts' %}">Bad UI 改善重點</a>
+        {% if user.is_staff %}<a href="{% url 'admin:index' %}">Django 管理後台</a>{% else %}<a href="{% url 'login' %}">管理後台（教師帳號）</a>{% endif %}
+        <a href="https://www.weather.gov/" target="_blank" rel="noopener">NWS 原始網站 {% ui_icon "external" 13 %}</a>
+        <a href="{% url 'register' %}">建立會員帳號</a>
+      </div>
+      <div class="footer-col">
+        <h3>資料說明</h3>
+        <p class="footer-small">資料為課堂展示用模擬資料，依 NWS 公開資訊結構整理。非美國國家氣象局官方網站。</p>
+        <p class="footer-small">觀測靈感來源：New York, NY（KNYC）· 2026 秋季</p>
+      </div>
+    </div>
+    <div class="wrap footer-bottom">
+      <span>© 2026 Skyline Weather · 介面設計期中專題</span>
+      <span>Built with Django · Designed from a Bad UI audit</span>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/app.js' %}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
