@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from django.db import connection
+from django.db import connection, transaction
 from django.db.models import Case, Count, Q, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -19,6 +19,7 @@ from .constants import ALERT_TYPES, CONDITIONS, REGIONS
 from .forms import ProfileForm, RegisterForm, StyledAuthenticationForm
 from .models import (
     Alert,
+    CurrentConditions,
     DailyForecast,
     Favorite,
     HourlyForecast,
@@ -56,6 +57,60 @@ def _favorite_ids(request):
             Favorite.objects.filter(user=request.user).values_list("location_id", flat=True)
         )
     return request._cached_favorite_ids
+
+
+_last_forecast_roll = {}
+
+
+def _location_today(location):
+    """Return today's date in the location's specific timezone."""
+    if location and location.timezone:
+        try:
+            loc_tz = ZoneInfo(location.timezone)
+        except Exception:
+            loc_tz = timezone.get_current_timezone()
+    else:
+        loc_tz = timezone.get_current_timezone()
+    return timezone.localtime(timezone.now(), loc_tz).date()
+
+
+def _roll_forecasts_forward(location, force=False):
+    """If demo daily forecasts for a location are in the past, roll their time window forward to today."""
+    if location is None:
+        return 0
+    loc_today = _location_today(location)
+
+    if not force and _last_forecast_roll.get(location.pk) == loc_today:
+        return 0
+
+    earliest_date = (
+        DailyForecast.objects.filter(location=location)
+        .order_by("date")
+        .values_list("date", flat=True)
+        .first()
+    )
+    if not earliest_date:
+        _last_forecast_roll[location.pk] = loc_today
+        return 0
+
+    diff_days = (loc_today - earliest_date).days
+    if diff_days > 0:
+        shift = timedelta(days=diff_days)
+        with transaction.atomic():
+            # Update in descending order to avoid unique_daily_location_date constraint collisions
+            for day in DailyForecast.objects.filter(location=location).order_by("-date"):
+                day.date += shift
+                day.save(update_fields=["date"])
+
+            # Update in descending order to avoid unique_hourly_location_time constraint collisions
+            for hour in HourlyForecast.objects.filter(location=location).order_by("-time"):
+                hour.time += shift
+                hour.save(update_fields=["time"])
+
+            CurrentConditions.objects.filter(location=location).update(observed_at=timezone.now())
+
+    _last_forecast_roll[location.pk] = loc_today
+    return max(0, diff_days)
 
 
 def _roll_alerts_forward():
@@ -238,6 +293,7 @@ def home(request):
     if location is None:
         return render(request, "empty.html")
 
+    _roll_forecasts_forward(location)
     current = getattr(location, "current", None)
     hourly = list(
         HourlyForecast.objects.filter(
@@ -246,7 +302,10 @@ def home(request):
     )
     if not hourly:
         hourly = list(location.hourly.all()[:12])
-    week = list(location.daily.all()[:7])
+    loc_today = _location_today(location)
+    week = list(location.daily.filter(date__gte=loc_today)[:7])
+    if len(week) < 7:
+        week = list(location.daily.all()[:7])
     alerts = _sort_alerts(
         _active_alerts().filter(location=location)[:6]
     )[:3]
@@ -380,9 +439,20 @@ def locations(request):
 
 def location_detail(request, slug):
     location = get_object_or_404(Location.objects.select_related("current"), slug=slug)
+    _roll_forecasts_forward(location)
     current = getattr(location, "current", None)
-    hourly = list(location.hourly.all()[:24])
-    week = list(location.daily.all()[:7])
+    hourly = list(
+        HourlyForecast.objects.filter(
+            location=location,
+            time__gte=timezone.now() - timedelta(hours=1),
+        ).order_by("time")[:24]
+    )
+    if len(hourly) < 12:
+        hourly = list(location.hourly.all()[:24])
+    loc_today = _location_today(location)
+    week = list(location.daily.filter(date__gte=loc_today)[:7])
+    if len(week) < 7:
+        week = list(location.daily.all()[:7])
     alerts = _sort_alerts(_active_alerts().filter(location=location))
     insights = _insights(current, hourly[:12], location=location)
     values = [hour.temp_f for hour in hourly[:12]]
@@ -400,7 +470,7 @@ def location_detail(request, slug):
         "saved": location.pk in fav_ids,
         "nearby": _nearby(location),
         "best_window": _best_window(hourly, tzname=location.timezone),
-        "today": timezone.localdate(),
+        "today": loc_today,
     }
     return render(request, "location_detail.html", context)
 

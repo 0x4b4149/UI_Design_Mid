@@ -326,3 +326,37 @@ class SkylineTestCase(TestCase):
         response = self.client.get("/admin/forecast/location/")
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "有效警報")
+
+    def test_daily_forecast_rolling_forward_when_dates_expired(self):
+        from forecast.views import _location_today
+        from django.db import transaction
+
+        loc_today = _location_today(self.location)
+
+        # 模擬 7 天預報資料落入 4 天前（如 Render 站點長時間未重跑 seed）
+        with transaction.atomic():
+            for day in DailyForecast.objects.filter(location=self.location).order_by("date"):
+                day.date -= timedelta(days=4)
+                day.save(update_fields=["date"])
+            for hour in HourlyForecast.objects.filter(location=self.location).order_by("time"):
+                hour.time -= timedelta(days=4)
+                hour.save(update_fields=["time"])
+
+        # 驗證此時最舊日期已是 4 天前
+        earliest_before = DailyForecast.objects.filter(location=self.location).order_by("date").first().date
+        self.assertEqual(earliest_before, loc_today - timedelta(days=4))
+
+        # 請求首頁，觸發 _roll_forecasts_forward
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+
+        # 驗證 DailyForecast 與 context['week'] 已自動向前滑動補正至今日
+        earliest_after = DailyForecast.objects.filter(location=self.location).order_by("date").first().date
+        self.assertEqual(earliest_after, loc_today)
+        self.assertEqual(response.context["week"][0].date, loc_today)
+
+        # 請求城市詳情頁，驗證 7 日預報與 context['today'] 同步更新
+        detail_resp = self.client.get(self.location.get_absolute_url())
+        self.assertEqual(detail_resp.status_code, 200)
+        self.assertEqual(detail_resp.context["week"][0].date, loc_today)
+        self.assertEqual(detail_resp.context["today"], loc_today)
