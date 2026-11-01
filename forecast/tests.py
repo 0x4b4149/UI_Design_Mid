@@ -234,6 +234,41 @@ class SkylineTestCase(TestCase):
         response = self.client.get(reverse("home"))
         self.assertContains(response, "14°")
 
+    def test_unit_sync_bidirectional_and_persistence(self):
+        self.client.login(username="demo", password="Demo1234!")
+        # 1. 切換單位至 C，應同步更新 session 與資料庫 profile.unit
+        self.client.get(reverse("set_unit", args=["c"]))
+        self.assertEqual(self.client.session.get("unit"), "c")
+        profile = Profile.objects.get(user=self.demo)
+        self.assertEqual(profile.unit, "c")
+
+        # 2. 在會員中心表單修改偏好單位為 F，應同步更新 session
+        self.client.post(
+            reverse("dashboard"),
+            {
+                "display_name": "Ivy",
+                "unit": "f",
+                "home_location": self.location.pk,
+                "min_severity": "moderate",
+            },
+        )
+        self.assertEqual(self.client.session.get("unit"), "f")
+        profile.refresh_from_db()
+        self.assertEqual(profile.unit, "f")
+
+    def test_timezone_aware_best_window_and_insights(self):
+        from forecast.views import _best_window, _insights
+        hourly = list(HourlyForecast.objects.filter(location=self.other)[:12])
+        # 使用西岸時區 America/Los_Angeles 進行計算
+        window = _best_window(hourly, tzname=self.other.timezone)
+        if window:
+            self.assertEqual(window[0].tzinfo.key, "America/Los_Angeles")
+            insights = _insights(getattr(self.other, "current", None), hourly, location=self.other)
+            walk_item = next((item for item in insights if item["icon"] == "walk"), None)
+            self.assertIsNotNone(walk_item)
+            expected_time = f"{window[0]:%H:%M}–{window[1]:%H:%M}"
+            self.assertIn(expected_time, walk_item["body"])
+
     def test_registration_creates_profile(self):
         response = self.client.post(
             reverse("register"),

@@ -1,5 +1,6 @@
 from datetime import timedelta
 import re
+from zoneinfo import ZoneInfo
 
 from django.contrib import messages
 from django.contrib.auth import login
@@ -71,15 +72,22 @@ def _sparkline(values, width=320, height=96, pad=10):
     return " ".join(points)
 
 
-def _best_window(hourly):
-    """Pick the best three consecutive daylight hours with low rain chance."""
+def _best_window(hourly, tzname="America/New_York"):
+    """Pick the best three consecutive daylight hours with low rain chance in the location's local timezone."""
+    if not hourly:
+        return None
+    try:
+        tz = ZoneInfo(tzname) if tzname else timezone.get_current_timezone()
+    except Exception:
+        tz = timezone.get_current_timezone()
+
     best, best_score = None, None
     for index in range(len(hourly) - 2):
         chunk = hourly[index : index + 3]
         first, last = chunk[0], chunk[-1]
         if last.time - first.time != timedelta(hours=2):
             continue
-        local_hours = [timezone.localtime(hour.time) for hour in chunk]
+        local_hours = [timezone.localtime(hour.time, tz) for hour in chunk]
         if not all(7 <= moment.hour <= 19 for moment in local_hours):
             continue
         if any(hour.precip_percent > 15 for hour in chunk):
@@ -89,10 +97,10 @@ def _best_window(hourly):
             best, best_score = chunk, score
     if not best:
         return None
-    return (timezone.localtime(best[0].time), timezone.localtime(best[-1].time))
+    return (timezone.localtime(best[0].time, tz), timezone.localtime(best[-1].time, tz))
 
 
-def _insights(current, hourly):
+def _insights(current, hourly, location=None):
     if not current:
         return []
     items = []
@@ -120,14 +128,17 @@ def _insights(current, hourly):
             "body": f"最高僅 {max_rain}%，適合安排戶外活動。",
         })
 
-    window = _best_window(hourly)
+    tzname = getattr(location, "timezone", "America/New_York") if location else "America/New_York"
+    window = _best_window(hourly, tzname=tzname)
     if window:
+        start_str = window[0].strftime("%H:%M")
+        end_str = window[1].strftime("%H:%M")
         items.append({
             "icon": "walk",
             "tone": "good",
             "title": "最適合外出的時段",
             "body": (
-                f"{window[0]:%H:%M}–{window[1]:%H:%M} 降雨機率低、風勢平穩，"
+                f"{start_str}–{end_str} 降雨機率低、風勢平穩，"
                 "散步或通勤都相對舒適。"
             ),
         })
@@ -182,7 +193,11 @@ def home(request):
 
     location = None
     if profile and profile.home_location_id:
-        location = profile.home_location
+        location = (
+            Location.objects.select_related("current")
+            .filter(pk=profile.home_location_id)
+            .first()
+        )
     if location is None:
         location = (
             Location.objects.select_related("current").filter(slug="new-york-ny").first()
@@ -205,8 +220,9 @@ def home(request):
         _active_alerts().filter(location=location)[:6]
     )[:3]
     regional = _nearby(location, limit=4)
-    insights = _insights(current, hourly)
+    insights = _insights(current, hourly, location=location)
     values = [hour.temp_f for hour in hourly]
+    fav_ids = _favorite_ids(request)
 
     context = {
         "location": location,
@@ -218,9 +234,9 @@ def home(request):
         "insights": insights,
         "sparkline": _sparkline(values),
         "sparkline_values": values,
-        "favorite_ids": _favorite_ids(request),
-        "saved": location.pk in _favorite_ids(request),
-        "best_window": _best_window(hourly),
+        "favorite_ids": fav_ids,
+        "saved": location.pk in fav_ids,
+        "best_window": _best_window(hourly, tzname=location.timezone),
         "today": timezone.localdate(),
     }
     return render(request, "home.html", context)
@@ -336,8 +352,9 @@ def location_detail(request, slug):
     hourly = list(location.hourly.all()[:24])
     week = list(location.daily.all()[:7])
     alerts = _sort_alerts(_active_alerts().filter(location=location))
-    insights = _insights(current, hourly[:12])
+    insights = _insights(current, hourly[:12], location=location)
     values = [hour.temp_f for hour in hourly[:12]]
+    fav_ids = _favorite_ids(request)
 
     context = {
         "location": location,
@@ -347,10 +364,10 @@ def location_detail(request, slug):
         "alerts": alerts,
         "insights": insights,
         "sparkline": _sparkline(values),
-        "favorite_ids": _favorite_ids(request),
-        "saved": location.pk in _favorite_ids(request),
+        "favorite_ids": fav_ids,
+        "saved": location.pk in fav_ids,
         "nearby": _nearby(location),
-        "best_window": _best_window(hourly),
+        "best_window": _best_window(hourly, tzname=location.timezone),
         "today": timezone.localdate(),
     }
     return render(request, "location_detail.html", context)
@@ -466,7 +483,8 @@ def dashboard(request):
     if request.method == "POST":
         form = ProfileForm(request.POST, instance=profile)
         if form.is_valid():
-            form.save()
+            updated_profile = form.save()
+            request.session["unit"] = updated_profile.unit
             messages.success(request, "會員偏好已更新。")
             return redirect("dashboard")
         messages.error(request, "設定未儲存，請檢查欄位內容。")
@@ -517,6 +535,8 @@ def toggle_favorite(request, slug):
 def set_unit(request, unit):
     if unit in {"f", "c"}:
         request.session["unit"] = unit
+        if request.user.is_authenticated:
+            Profile.objects.filter(user=request.user).update(unit=unit)
     next_url = request.GET.get("next") or request.META.get("HTTP_REFERER")
     if next_url and url_has_allowed_host_and_scheme(
         next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
@@ -530,6 +550,13 @@ class SkylineLoginView(LoginView):
     authentication_form = StyledAuthenticationForm
     redirect_authenticated_user = True
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        profile = getattr(self.request.user, "profile", None)
+        if profile and profile.unit in {"f", "c"}:
+            self.request.session["unit"] = profile.unit
+        return response
+
 
 def register(request):
     if request.user.is_authenticated:
@@ -539,6 +566,9 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+            profile = getattr(user, "profile", None)
+            if profile and profile.unit in {"f", "c"}:
+                request.session["unit"] = profile.unit
             messages.success(request, "帳號建立成功，歡迎加入 Skyline Weather！")
             return redirect("dashboard")
     else:
