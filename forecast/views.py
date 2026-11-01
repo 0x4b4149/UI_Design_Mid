@@ -1,11 +1,12 @@
 from datetime import timedelta
+import re
 
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.db import connection
-from django.db.models import Count, Q
+from django.db.models import Case, Count, Q, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -245,14 +246,25 @@ def locations(request):
         )
     )
 
+    zip_match = re.match(r"^(?:zip\s*:?\s*)?(\d{1,5})(?:-\d{4})?$", q, re.IGNORECASE)
+    is_zip_search = bool(zip_match)
+
     if q:
-        queryset = queryset.filter(
-            Q(name__icontains=q)
-            | Q(state__icontains=q)
-            | Q(county__icontains=q)
-            | Q(zip_code__icontains=q)
-            | Q(station_code__icontains=q)
-        )
+        if is_zip_search:
+            zip_digits = zip_match.group(1)
+            queryset = queryset.filter(
+                Q(zip_code__icontains=zip_digits)
+                | Q(name__icontains=q)
+                | Q(state__icontains=q)
+            )
+        else:
+            queryset = queryset.filter(
+                Q(name__icontains=q)
+                | Q(state__icontains=q)
+                | Q(county__icontains=q)
+                | Q(zip_code__icontains=q)
+                | Q(station_code__icontains=q)
+            )
     if region:
         queryset = queryset.filter(region=region)
     if condition:
@@ -271,7 +283,16 @@ def locations(request):
         "temp_asc": ("current__temp_f", "name"),
         "alerts": ("-active_alert_count", "state", "name"),
     }
-    queryset = queryset.order_by(*sort_map.get(sort, sort_map["name"]))
+    if is_zip_search and sort == "name":
+        zip_digits = zip_match.group(1)
+        queryset = queryset.order_by(
+            Case(When(zip_code__startswith=zip_digits, then=Value(0)), default=Value(1)),
+            "zip_code",
+            "state",
+            "name",
+        )
+    else:
+        queryset = queryset.order_by(*sort_map.get(sort, sort_map["name"]))
 
     total = queryset.count()
     if request.user.is_authenticated and q:
@@ -292,6 +313,8 @@ def locations(request):
         "page_obj": page_obj,
         "total": total,
         "q": q,
+        "is_zip_search": is_zip_search,
+        "zip_query": zip_match.group(1) if is_zip_search else "",
         "selected_region": region,
         "selected_condition": condition,
         "alert_filter": alert_filter,
@@ -530,18 +553,35 @@ def search_suggestions(request):
     q = (request.GET.get("q") or "").strip()
     unit = request.session.get("unit", "f")
     if len(q) < 1:
-        return JsonResponse({"results": []})
+        return JsonResponse({"results": [], "is_zip_search": False, "query": q})
 
-    matches = (
-        Location.objects.select_related("current")
-        .filter(
-            Q(name__icontains=q)
-            | Q(state__icontains=q)
-            | Q(county__icontains=q)
-            | Q(zip_code__icontains=q)
+    zip_match = re.match(r"^(?:zip\s*:?\s*)?(\d{1,5})(?:-\d{4})?$", q, re.IGNORECASE)
+    is_zip = bool(zip_match)
+
+    if is_zip:
+        zip_digits = zip_match.group(1)
+        matches = (
+            Location.objects.select_related("current")
+            .filter(Q(zip_code__icontains=zip_digits) | Q(name__icontains=q))
+            .order_by(
+                Case(When(zip_code__startswith=zip_digits, then=Value(0)), default=Value(1)),
+                "zip_code",
+                "state",
+                "name",
+            )[:6]
         )
-        .order_by("state", "name")[:6]
-    )
+    else:
+        matches = (
+            Location.objects.select_related("current")
+            .filter(
+                Q(name__icontains=q)
+                | Q(state__icontains=q)
+                | Q(county__icontains=q)
+                | Q(zip_code__icontains=q)
+            )
+            .order_by("state", "name")[:6]
+        )
+
     results = []
     for location in matches:
         current = getattr(location, "current", None)
@@ -558,13 +598,19 @@ def search_suggestions(request):
                 "state": location.state,
                 "label": location.full_name,
                 "county": location.county,
+                "zip_code": location.zip_code if is_zip else "",
                 "url": location.get_absolute_url(),
                 "temp": temp_value,
                 "unit": "°C" if unit == "c" else "°F",
                 "condition": current.get_condition_display() if current else "",
             }
         )
-    return JsonResponse({"results": results})
+    return JsonResponse({
+        "results": results,
+        "is_zip_search": is_zip,
+        "zip_query": zip_match.group(1) if is_zip else "",
+        "query": q,
+    })
 
 
 def not_found(request, exception):

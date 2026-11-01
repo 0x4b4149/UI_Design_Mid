@@ -20,9 +20,10 @@
   <section class="card filter-card">
     <form class="filter-form" method="get" action="{% url 'locations' %}">
       <div class="filter-grid">
-        <div class="field">
+        <div class="field field-suggest" data-search-form data-search-url="{% url 'search_suggestions' %}">
           <label for="filter-q">搜尋城市、州、郡或 ZIP</label>
-          <input id="filter-q" class="field-input" type="search" name="q" value="{{ q }}" placeholder="例如 New York、NY、10001">
+          <input id="filter-q" class="field-input" type="search" name="q" value="{{ q }}" placeholder="例如 New York、NY、10001" autocomplete="off" data-search-input>
+          <div class="search-suggest" data-search-suggest hidden></div>
         </div>
         <div class="field">
           <label for="filter-region">區域</label>
@@ -81,7 +82,13 @@
   <div class="result-toolbar">
     <div class="count">共 <strong>{{ total }}</strong> 個符合條件的城市{% if page_obj.paginator.num_pages > 1 %} · 第 {{ page_obj.number }} / {{ page_obj.paginator.num_pages }} 頁{% endif %}</div>
     <div class="active-filters">
-      {% if q %}<span class="pill">{% ui_icon "search" 12 %} {{ q }}</span>{% endif %}
+      {% if q %}
+        {% if is_zip_search %}
+          <span class="pill pill-blue">{% ui_icon "pin" 12 %} ZIP 快速定位：{{ q }}</span>
+        {% else %}
+          <span class="pill">{% ui_icon "search" 12 %} {{ q }}</span>
+        {% endif %}
+      {% endif %}
       {% if selected_region %}{% for value, label in regions %}{% if selected_region == value %}<span class="pill">{{ label }}</span>{% endif %}{% endfor %}{% endif %}
       {% if selected_condition %}{% for value, label in conditions %}{% if selected_condition == value %}<span class="pill">{{ label }}</span>{% endif %}{% endfor %}{% endif %}
       {% if alert_filter %}<span class="pill">{% ui_icon "bell" 12 %} 有警報</span>{% endif %}
@@ -92,11 +99,21 @@
   {% if page_obj.object_list %}
     <div class="location-grid">
       {% for city in page_obj %}
-        <article class="loc-card">
+        <article class="loc-card {% if is_zip_search %}is-zip-match{% endif %}">
           <div class="loc-top">
             <div>
-              <div class="loc-name"><a href="{{ city.get_absolute_url }}">{{ city.name }}</a> <span>, {{ city.state }}</span></div>
-              <div class="loc-sub">{{ city.county }}{% if city.station_code %} · {{ city.station_code }}{% endif %}</div>
+              <div class="loc-name">
+                <a href="{{ city.get_absolute_url }}">{{ city.name }}</a> <span>, {{ city.state }}</span>
+                {% if is_zip_search and city.zip_code %}
+                  <span class="loc-zip-badge" title="郵遞區號">ZIP {{ city.zip_code }}</span>
+                {% endif %}
+              </div>
+              <div class="loc-sub">
+                {% if is_zip_search and city.zip_code %}
+                  <span class="loc-zip-sub">{% ui_icon "pin" 11 %} 郵遞區號：<strong>{{ city.zip_code }}</strong></span> ·
+                {% endif %}
+                {{ city.county }}{% if city.station_code %} · {{ city.station_code }}{% endif %}
+              </div>
             </div>
             <div class="loc-fav">
               {% include "partials/favorite_button.html" with location=city %}

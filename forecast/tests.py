@@ -159,6 +159,32 @@ class SkylineTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["results"][0]["label"], "New York, NY")
+        self.assertFalse(data.get("is_zip_search"))
+        self.assertEqual(data["results"][0]["zip_code"], "")
+
+    def test_search_suggestions_api_with_zip_code(self):
+        response = self.client.get(reverse("search_suggestions"), {"q": "100"})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data.get("is_zip_search"))
+        self.assertEqual(data["results"][0]["name"], "New York")
+        self.assertEqual(data["results"][0]["zip_code"], "10001")
+
+    def test_locations_search_by_zip_code_shows_zip_badge_only_for_zip_search(self):
+        # 1. 搜尋 zip code 時，有 is_zip_search 為 True，且列表顯式顯示 zip code 標籤
+        response = self.client.get(reverse("locations"), {"q": "10001"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["is_zip_search"])
+        self.assertContains(response, "ZIP 10001")
+        self.assertContains(response, "loc-zip-badge")
+        self.assertContains(response, "郵遞區號：<strong>10001</strong>")
+
+        # 2. 搜尋非 zip code（如城市名 Seattle）時，is_zip_search 為 False，不得顯示 zip code 標籤
+        response = self.client.get(reverse("locations"), {"q": "Seattle"})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["is_zip_search"])
+        self.assertNotContains(response, "loc-zip-badge")
+        self.assertNotContains(response, "郵遞區號：")
 
     def test_dashboard_requires_login(self):
         response = self.client.get(reverse("dashboard"))
