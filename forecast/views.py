@@ -343,10 +343,11 @@ def locations(request):
 
     total = queryset.count()
     if request.user.is_authenticated and q:
+        cleaned_q = q.strip()
         last = SearchHistory.objects.filter(user=request.user).first()
-        if not last or last.query != q:
+        if not last or last.query.strip().lower() != cleaned_q.lower():
             SearchHistory.objects.create(
-                user=request.user, query=q, region=region, results_count=total
+                user=request.user, query=cleaned_q, region=region, results_count=total
             )
 
     from django.core.paginator import Paginator

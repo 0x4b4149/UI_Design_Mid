@@ -148,6 +148,15 @@ class SkylineTestCase(TestCase):
         self.assertContains(response, "Seattle")
         self.assertNotContains(response, 'href="/locations/new-york-ny/"')
 
+    def test_search_history_deduplication(self):
+        self.client.login(username="demo", password="Demo1234!")
+        initial_count = SearchHistory.objects.filter(user=self.demo).count()
+        self.client.get(reverse("locations"), {"q": "Seattle"})
+        self.assertEqual(SearchHistory.objects.filter(user=self.demo).count(), initial_count + 1)
+        # 大小寫不同或包含前後空格時，不應重複建立
+        self.client.get(reverse("locations"), {"q": " seattle "})
+        self.assertEqual(SearchHistory.objects.filter(user=self.demo).count(), initial_count + 1)
+
     def test_alert_filters(self):
         response = self.client.get(reverse("alerts"), {"severity": "severe"})
         self.assertContains(response, "Coastal Flood Warning")
