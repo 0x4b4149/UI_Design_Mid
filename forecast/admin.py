@@ -73,6 +73,19 @@ class LocationAdmin(admin.ModelAdmin):
         ("內容", {"fields": ("description", "created_at")}),
     )
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        from django.db.models import Count, Q
+        from django.utils import timezone
+
+        return qs.select_related("current").annotate(
+            annotated_alert_count=Count(
+                "alerts",
+                filter=Q(alerts__is_active=True, alerts__ends_at__gte=timezone.now()),
+                distinct=True,
+            )
+        )
+
     @admin.display(description="現在溫度", ordering="current__temp_f")
     def current_temp_display(self, obj):
         current = getattr(obj, "current", None)
@@ -83,9 +96,11 @@ class LocationAdmin(admin.ModelAdmin):
         current = getattr(obj, "current", None)
         return current.get_condition_display() if current else "—"
 
-    @admin.display(description="有效警報")
+    @admin.display(description="有效警報", ordering="annotated_alert_count")
     def active_alert_count(self, obj):
-        count = obj.alerts.filter(is_active=True).count()
+        count = getattr(obj, "annotated_alert_count", None)
+        if count is None:
+            count = obj.alerts.filter(is_active=True).count()
         if not count:
             return "0"
         return format_html(

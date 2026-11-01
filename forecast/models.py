@@ -188,6 +188,7 @@ class Alert(models.Model):
         verbose_name_plural = "天氣警報"
         ordering = ["-issued_at"]
         indexes = [
+            models.Index(fields=["is_active", "ends_at"]),
             models.Index(fields=["severity", "is_active"]),
             models.Index(fields=["alert_type"]),
         ]

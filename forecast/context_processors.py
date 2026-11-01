@@ -6,7 +6,9 @@ from .models import Alert, Profile
 def site_context(request):
     profile = None
     if request.user.is_authenticated:
-        profile, _ = Profile.objects.get_or_create(user=request.user)
+        if not hasattr(request.user, "_cached_profile"):
+            request.user._cached_profile, _ = Profile.objects.get_or_create(user=request.user)
+        profile = request.user._cached_profile
 
     unit = request.session.get("unit")
     if unit not in {"f", "c"}:

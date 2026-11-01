@@ -40,18 +40,51 @@ def _to_int(value):
         return None
 
 
+def _user_profile(user):
+    if not user or not user.is_authenticated:
+        return None
+    if not hasattr(user, "_cached_profile"):
+        user._cached_profile, _ = Profile.objects.get_or_create(user=user)
+    return user._cached_profile
+
+
 def _favorite_ids(request):
     if not request.user.is_authenticated:
         return set()
-    return set(
-        Favorite.objects.filter(user=request.user).values_list("location_id", flat=True)
-    )
+    if not hasattr(request, "_cached_favorite_ids"):
+        request._cached_favorite_ids = set(
+            Favorite.objects.filter(user=request.user).values_list("location_id", flat=True)
+        )
+    return request._cached_favorite_ids
+
+
+def _roll_alerts_forward():
+    """If all demo alerts in the database have expired, roll their time window forward relative to now."""
+    now = timezone.now()
+    all_alerts = list(Alert.objects.filter(is_active=True))
+    if not all_alerts:
+        return
+    latest_end = max(alert.ends_at for alert in all_alerts)
+    if latest_end >= now:
+        return
+    shift = (now + timedelta(hours=24)) - latest_end
+    for alert in all_alerts:
+        alert.starts_at += shift
+        alert.ends_at += shift
+        alert.issued_at = alert.starts_at - timedelta(hours=3)
+    Alert.objects.bulk_update(all_alerts, ["starts_at", "ends_at", "issued_at"])
 
 
 def _active_alerts():
-    return Alert.objects.filter(
+    qs = Alert.objects.filter(
         is_active=True, ends_at__gte=timezone.now()
     ).select_related("location")
+    if not qs.exists() and Alert.objects.filter(is_active=True).exists():
+        _roll_alerts_forward()
+        qs = Alert.objects.filter(
+            is_active=True, ends_at__gte=timezone.now()
+        ).select_related("location")
+    return qs
 
 
 def _sort_alerts(alerts):
@@ -187,9 +220,7 @@ def _nearby(location, limit=4):
 # public pages
 # ---------------------------------------------------------------------------
 def home(request):
-    profile = None
-    if request.user.is_authenticated:
-        profile, _ = Profile.objects.get_or_create(user=request.user)
+    profile = _user_profile(request.user)
 
     location = None
     if profile and profile.home_location_id:
@@ -377,7 +408,9 @@ def alerts(request):
     base = _active_alerts()
     severity_counts = {
         row["severity"]: row["n"]
-        for row in base.values("severity").annotate(n=Count("id"))
+        for row in Alert.objects.filter(is_active=True, ends_at__gte=timezone.now())
+        .values("severity")
+        .annotate(n=Count("id"))
     }
 
     severity = request.GET.get("severity", "").strip()
@@ -451,7 +484,7 @@ def alert_detail(request, pk):
 # ---------------------------------------------------------------------------
 @login_required
 def dashboard(request):
-    profile, _ = Profile.objects.get_or_create(user=request.user)
+    profile = _user_profile(request.user)
     favorites = list(
         Favorite.objects.filter(user=request.user).select_related(
             "location", "location__current"
@@ -470,9 +503,13 @@ def dashboard(request):
         if len(recent) == 6:
             break
 
-    my_alerts = _sort_alerts(
-        _active_alerts().filter(location__in=favorite_locations)
-    )[:4] if favorite_locations else []
+    fav_alerts = _active_alerts().filter(location__in=favorite_locations) if favorite_locations else []
+    all_my_alerts = _sort_alerts(list(fav_alerts)) if favorite_locations else []
+    my_alerts = all_my_alerts[:4]
+    alert_count = len(all_my_alerts)
+    severity_counts = {}
+    for alert in all_my_alerts:
+        severity_counts[alert.severity] = severity_counts.get(alert.severity, 0) + 1
 
     recommended = (
         Location.objects.select_related("current")
@@ -499,14 +536,8 @@ def dashboard(request):
         "recommended": recommended,
         "form": form,
         "favorite_ids": favorite_ids,
-        "alert_count": _active_alerts().filter(location__in=favorite_locations).count() if favorite_locations else 0,
-        "severity_counts": {
-            row["severity"]: row["n"]
-            for row in _active_alerts()
-            .filter(location__in=favorite_locations)
-            .values("severity")
-            .annotate(n=Count("id"))
-        } if favorite_locations else {},
+        "alert_count": alert_count,
+        "severity_counts": severity_counts,
     }
     return render(request, "dashboard.html", context)
 

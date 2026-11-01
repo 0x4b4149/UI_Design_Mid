@@ -299,3 +299,21 @@ class SkylineTestCase(TestCase):
     def test_filter_page_has_pagination_and_is_active(self):
         response = self.client.get(reverse("locations"))
         self.assertContains(response, "共 <strong>2</strong> 個符合條件的城市", html=False)
+
+    def test_alert_rolling_forward_when_all_expired(self):
+        from forecast.views import _active_alerts
+        # 模擬所有警報都過期 3 天
+        past = timezone.now() - timedelta(days=3)
+        Alert.objects.filter(is_active=True).update(starts_at=past - timedelta(hours=24), ends_at=past)
+        self.assertEqual(Alert.objects.filter(is_active=True, ends_at__gte=timezone.now()).count(), 0)
+
+        # 呼叫 _active_alerts() 應自動滑動展延至當前時間窗口
+        active = _active_alerts()
+        self.assertTrue(active.exists())
+        self.assertTrue(all(alert.ends_at >= timezone.now() for alert in active))
+
+    def test_admin_location_changelist_annotated_alert_count(self):
+        self.client.login(username="admin", password="Admin1234!")
+        response = self.client.get("/admin/forecast/location/")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "有效警報")
