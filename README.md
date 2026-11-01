@@ -258,7 +258,7 @@ python scripts/build_pptx.py
 - [x] 實際完成 Neon + Render 部署，連結已填入 Meta 並重新產生 PDF。
 - [x] `docs/report/report_meta.json`：組別、`FRONTEND_URL`、`ADMIN_URL`、`REPO_URL`。
 - [x] 確認 `demo / Demo1234!` 與 `admin / Admin1234!` 可登入（已於正式站驗證）。
-- [ ] `docs/report/report_meta.json`：補上組員姓名／學號，再執行 `build_report.bat`（或 `更新報告.bat`）。
+- [ ] `docs/report/report_meta.json`：補上組員姓名／學號，再執行 `build_report.bat`。
 - [ ] 在報告附錄放入 **10 組 AI 對話截圖**（含 Prompt 與 AI 回覆）；前期 8 組可從 2026-10-18 的 OpenCode 對話截圖，本期 2 組為 2026-10-31 對話。
 - [ ] PDF 上傳 TronClass 作業區（2026/11/01 23:59 前）。
 
